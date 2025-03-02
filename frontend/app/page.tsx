@@ -1,20 +1,19 @@
 import Link from "next/link"
-import { CalendarIcon, CarFront, ChevronRight, MapPin, Search, Star } from "lucide-react"
+import { CalendarIcon, CarFront, MapPin, Search } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { DatePickerWithRange } from "@/components/date-picker-with-range"
 import { LocationSearch } from "@/components/location-search"
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col text-not-editable non-selectable"  contentEditable={false}>
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container max-w-7xl mx-auto flex h-16 items-center justify-between">
+        <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
             <CarFront className="h-6 w-6 text-primary" />
-            <span className="text-xl font-bold">PARKR</span>
+            <span className="text-xl font-bold">ParkShare</span>
           </div>
           <nav className="hidden md:flex items-center gap-6">
             <Link href="#" className="text-sm font-medium hover:underline underline-offset-4">
@@ -43,7 +42,7 @@ export default function Home() {
             style={{ backgroundImage: "url('/placeholder.svg?height=500&width=1200')" }}
           />
           <div className="absolute inset-0 flex items-center z-20">
-            <div className="container max-w-7xl mx-auto">
+            <div className="container">
               <div className="max-w-lg space-y-4">
                 <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">Find the perfect parking spot</h1>
                 <p className="text-lg text-muted-foreground">
@@ -52,7 +51,7 @@ export default function Home() {
               </div>
             </div>
           </div>
-          <div className="container max-w-7xl mx-auto relative -mt-24 z-30">
+          <div className="container relative -mt-24 z-30">
             <div className="rounded-xl border bg-card p-6 shadow-lg">
               <div className="grid gap-4 md:grid-cols-[1fr_1fr_auto]">
                 <div className="space-y-2">
@@ -79,60 +78,14 @@ export default function Home() {
             </div>
           </div>
         </section>
-
-        <section className="bg-muted/50 py-12 md:py-24">
-          <div className="container max-w-7xl mx-auto">
-            <div className="text-center max-w-2xl mx-auto mb-12">
-              <h2 className="text-3xl font-bold tracking-tight">How PARKR Works</h2>
-              <p className="text-muted-foreground mt-2">Find, book, and park in three simple steps</p>
-            </div>
-            <div className="grid gap-8 md:grid-cols-3">
-              {howItWorks.map((step, index) => (
-                <div key={index} className="flex flex-col items-center text-center">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 mb-4">
-                    {step.icon}
-                  </div>
-                  <h3 className="text-xl font-semibold mb-2">{step.title}</h3>
-                  <p className="text-muted-foreground">{step.description}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        
-
-        <section className="bg-primary text-primary-foreground py-12 md:py-24">
-          <div className="container max-w-7xl mx-auto">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-              <div className="max-w-md">
-                <h2 className="text-3xl font-bold tracking-tight mb-4">Ready to earn with your driveway?</h2>
-                <p className="mb-6">
-                  Turn your unused parking space into extra income. Join thousands of hosts earning money with
-                  PARKR.
-                </p>
-                <Button variant="secondary" size="lg">
-                  List Your Space
-                </Button>
-              </div>
-              <div className="w-full max-w-md rounded-xl overflow-hidden">
-                <img
-                  src="/placeholder.svg?height=300&width=500&text=Earn+with+your+driveway"
-                  alt="Earn with your driveway"
-                  className="w-full h-auto"
-                />
-              </div>
-            </div>
-          </div>
-        </section>
       </main>
       <footer className="border-t bg-muted/50">
-        <div className="container max-w-7xl mx-auto py-8 md:py-12">
+        <div className="container py-8 md:py-12">
           <div className="grid grid-cols-2 gap-8 md:grid-cols-4 lg:grid-cols-5">
             <div className="col-span-2 lg:col-span-2">
               <div className="flex items-center gap-2 mb-4">
                 <CarFront className="h-6 w-6 text-primary" />
-                <span className="text-xl font-bold">PARKR</span>
+                <span className="text-xl font-bold">ParkShare</span>
               </div>
               <p className="text-muted-foreground max-w-xs">
                 The easiest way to find and book parking spaces in your neighborhood.
@@ -217,7 +170,7 @@ export default function Home() {
           <Separator className="my-8" />
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} PARKR, Inc. All rights reserved.
+              © {new Date().getFullYear()} ParkShare, Inc. All rights reserved.
             </p>
             <div className="flex items-center gap-4">
               <Link href="#" className="text-muted-foreground hover:text-foreground">
@@ -280,45 +233,4 @@ export default function Home() {
     </div>
   )
 }
-
-
-
-const howItWorks = [
-  {
-    icon: <Search className="h-8 w-8 text-primary" />,
-    title: "Find a Spot",
-    description: "Search for parking spaces by location, date, and time. Filter by price, features, and ratings.",
-  },
-  {
-    icon: <CalendarIcon className="h-8 w-8 text-primary" />,
-    title: "Book & Pay",
-    description: "Reserve your spot in advance with secure payment. Receive instant confirmation and directions.",
-  },
-  {
-    icon: <CarFront className="h-8 w-8 text-primary" />,
-    title: "Park with Ease",
-    description: "Follow the directions to your reserved spot. No more circling blocks looking for parking.",
-  },
-]
-
-const testimonials = [
-  {
-    rating: 5,
-    text: "I've been using PARKR for my daily commute and it's saved me so much time and stress. No more hunting for parking!",
-    name: "Sarah Johnson",
-    location: "New York",
-  },
-  {
-    rating: 5,
-    text: "As a host, I'm earning extra income from my unused driveway. The platform makes it easy to manage bookings and payments.",
-    name: "Michael Chen",
-    location: "San Francisco",
-  },
-  {
-    rating: 4,
-    text: "Found a perfect spot near the concert venue last weekend. Much cheaper than the venue parking and just a short walk away.",
-    name: "Jessica Williams",
-    location: "Chicago",
-  },
-]
 
