@@ -132,7 +132,7 @@ export function LocationSearch() {
         </div>
       </PopoverTrigger>
       <PopoverContent
-        className="w-[400px] p-0"
+        className="w-[var(--radix-popper-anchor-width)] p-0"
         align="start"
         onPointerDownOutside={(e) => {
           // Prevent the popover from closing when clicking predictions
