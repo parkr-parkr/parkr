@@ -1,62 +1,72 @@
-"use client";
+"use client"
 
-import * as React from "react";
-import { MapPin, Loader2 } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import * as React from "react"
+import { MapPin, Loader2 } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
 interface Prediction {
-  description: string;
-  place_id: string;
+  description: string
+  place_id: string
 }
 
-export function LocationSearch() {
-  const [open, setOpen] = React.useState(false);
-  const [value, setValue] = React.useState("");
-  const [predictions, setPredictions] = React.useState<Prediction[]>([]);
-  const [loading, setLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
-  const [scriptLoaded, setScriptLoaded] = React.useState(false);
-  const autocompleteService = React.useRef<google.maps.places.AutocompleteService | null>(null);
-  const inputRef = React.useRef<HTMLInputElement>(null);
+interface LocationSearchProps {
+  onLocationSelect?: (location: string) => void
+}
+
+declare global {
+  interface Window {
+    google?: any
+  }
+}
+
+export function LocationSearch({ onLocationSelect }: LocationSearchProps) {
+  const [open, setOpen] = React.useState(false)
+  const [value, setValue] = React.useState("")
+  const [predictions, setPredictions] = React.useState<Prediction[]>([])
+  const [loading, setLoading] = React.useState(false)
+  const [error, setError] = React.useState<string | null>(null)
+  const [scriptLoaded, setScriptLoaded] = React.useState(false)
+  const autocompleteService = React.useRef<google.maps.places.AutocompleteService | null>(null)
+  const inputRef = React.useRef<HTMLInputElement>(null)
 
   // Load Google Maps JavaScript API
   React.useEffect(() => {
     if (!window.google && !scriptLoaded) {
-      const script = document.createElement("script");
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places`;
-      script.async = true;
-      script.defer = true;
+      const script = document.createElement("script")
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places`
+      script.async = true
+      script.defer = true
       script.onload = () => {
-        autocompleteService.current = new google.maps.places.AutocompleteService();
-        setScriptLoaded(true);
-      };
+        autocompleteService.current = new window.google.maps.places.AutocompleteService()
+        setScriptLoaded(true)
+      }
       script.onerror = () => {
-        setError("Failed to load Google Maps API");
-      };
-      document.head.appendChild(script);
+        setError("Failed to load Google Maps API")
+      }
+      document.head.appendChild(script)
     } else if (window.google && !autocompleteService.current) {
-      autocompleteService.current = new google.maps.places.AutocompleteService();
-      setScriptLoaded(true);
+      autocompleteService.current = new window.google.maps.places.AutocompleteService()
+      setScriptLoaded(true)
     }
-  }, []);
+  }, [])
 
   // Handle input changes and fetch predictions
   const handleInputChange = React.useCallback(async (input: string) => {
-    setLoading(true);
-    setError(null);
-    setValue(input);
+    setLoading(true)
+    setError(null)
+    setValue(input)
 
     if (!input.trim()) {
-      setPredictions([]);
-      setLoading(false);
-      return;
+      setPredictions([])
+      setLoading(false)
+      return
     }
 
     if (!autocompleteService.current) {
-      setError("Places API not loaded");
-      setLoading(false);
-      return;
+      setError("Places API not loaded")
+      setLoading(false)
+      return
     }
 
     try {
@@ -68,51 +78,65 @@ export function LocationSearch() {
             types: ["address"],
           },
           (predictions, status) => {
-            if (status === google.maps.places.PlacesServiceStatus.OK && predictions) {
-              resolve(predictions);
+            if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
+              resolve(predictions)
             } else {
-              reject(new Error("Failed to fetch predictions"));
+              reject(new Error("Failed to fetch predictions"))
             }
           },
-        );
-      });
+        )
+      })
 
       setPredictions(
         response.map((prediction) => ({
           description: prediction.description,
           place_id: prediction.place_id,
         })),
-      );
+      )
       // Only open if we have predictions
       if (response.length > 0) {
-        setOpen(true);
+        setOpen(true)
       }
     } catch (err) {
-      setError("Failed to fetch address suggestions");
-      setPredictions([]);
+      setError("Failed to fetch address suggestions")
+      setPredictions([])
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  }, []);
+  }, [])
 
   // Debounce the input to prevent too many API calls
   React.useEffect(() => {
     const timeoutId = setTimeout(() => {
-      if (value) handleInputChange(value);
-    }, 300);
+      if (value) handleInputChange(value)
+    }, 300)
 
-    return () => clearTimeout(timeoutId);
-  }, [value, handleInputChange]);
+    return () => clearTimeout(timeoutId)
+  }, [value, handleInputChange])
+
+  const handleSelectLocation = (prediction: Prediction) => {
+    setValue(prediction.description)
+    setPredictions([])
+    setOpen(false)
+
+    // Pass the selected location back to the parent component
+    if (onLocationSelect) {
+      onLocationSelect(prediction.description)
+    }
+  }
 
   return (
-    <Popover open={open} onOpenChange={(newOpen) => {
-      // Enhance handling to prevent popover from closing when there are predictions
-      if (!newOpen && predictions.length > 0) {
-        setOpen(true);
-      } else {
-        setOpen(newOpen);
-      }
-    }}>
+    <Popover
+      open={open}
+      onOpenChange={(newOpen) => {
+        // Enhance handling to prevent popover from closing when there are predictions
+        if (!newOpen && predictions.length > 0) {
+          setOpen(true)
+        } else {
+          setOpen(newOpen)
+        }
+      }}
+    >
       <PopoverTrigger asChild>
         <div className="relative w-full">
           <Input
@@ -124,7 +148,7 @@ export function LocationSearch() {
             onFocus={() => {
               // Only open if we have predictions
               if (predictions.length > 0) {
-                setOpen(true);
+                setOpen(true)
               }
             }}
           />
@@ -137,7 +161,7 @@ export function LocationSearch() {
         onPointerDownOutside={(e) => {
           // Prevent the popover from closing when clicking predictions
           if (e.target instanceof Element && e.target.closest(".predictions-container")) {
-            e.preventDefault();
+            e.preventDefault()
           }
         }}
       >
@@ -157,14 +181,10 @@ export function LocationSearch() {
                 <button
                   key={prediction.place_id}
                   className="flex items-center gap-2 rounded-sm px-4 py-2 text-sm hover:bg-accent hover:text-accent-foreground"
-                  onClick={() => {
-                    setValue(prediction.description);
-                    setPredictions([]);
-                    setOpen(false);
-                  }}
+                  onClick={() => handleSelectLocation(prediction)}
                   onMouseDown={(e) => {
                     // Prevent the button from stealing focus
-                    e.preventDefault();
+                    e.preventDefault()
                   }}
                 >
                   <MapPin className="h-4 w-4" />
@@ -176,5 +196,6 @@ export function LocationSearch() {
         </div>
       </PopoverContent>
     </Popover>
-  );
+  )
 }
+

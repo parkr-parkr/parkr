@@ -1,3 +1,7 @@
+"use client"
+
+import { useState } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { CalendarIcon, CarFront, MapPin, Search, CheckCircle2, DollarSign, Clock, ParkingCircle } from "lucide-react"
 
@@ -6,15 +10,45 @@ import { Separator } from "@/components/ui/separator"
 import { DatePickerWithRange } from "@/components/date-picker-with-range"
 import { LocationSearch } from "@/components/location-search"
 import { PreventTextEditing } from "./page-fix"
+import type { DateRange } from "react-day-picker"
 
 export default function Home() {
+  const router = useRouter()
+  const [selectedLocation, setSelectedLocation] = useState("")
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: new Date(),
+    to: new Date(new Date().setDate(new Date().getDate() + 2)),
+  })
+
+  const handleSearch = () => {
+    if (!selectedLocation) {
+      alert("Please select a location")
+      return
+    }
+
+    // Construct query parameters
+    const params = new URLSearchParams()
+    params.append("location", selectedLocation)
+
+    if (dateRange?.from) {
+      params.append("startDate", dateRange.from.toISOString())
+    }
+
+    if (dateRange?.to) {
+      params.append("endDate", dateRange.to.toISOString())
+    }
+
+    // Navigate to the map page with query parameters
+    router.push(`/map?${params.toString()}`)
+  }
+
   return (
     <div className="flex min-h-screen flex-col">
       {/* Add the client component that prevents text editing */}
       <PreventTextEditing />
 
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        {/* Header content remains the same */}
+        {/* Header content */}
         <div className="container max-w-6xl mx-auto flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
             <CarFront className="h-6 w-6 text-primary" />
@@ -32,15 +66,17 @@ export default function Home() {
             </Link>
           </nav>
           <div className="flex items-center gap-4">
-            <Link href="#" className="hidden md:block text-sm font-medium hover:underline underline-offset-4">
+            <Link href="/signup" className="hidden md:block text-sm font-medium hover:underline underline-offset-4">
               Sign Up
             </Link>
-            <Button>Log In</Button>
+            <Button asChild>
+              <Link href="/login">Log In</Link>
+            </Button>
           </div>
         </div>
       </header>
 
-      {/* Rest of the page content remains the same */}
+      {/* Rest of your component... */}
       <main className="flex-1">
         <section className="relative">
           <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-primary/5 z-10" />
@@ -66,17 +102,17 @@ export default function Home() {
                     <MapPin className="mr-1 h-4 w-4" />
                     Location
                   </div>
-                  <LocationSearch />
+                  <LocationSearch onLocationSelect={setSelectedLocation} />
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center text-sm font-medium">
                     <CalendarIcon className="mr-1 h-4 w-4" />
                     Dates
                   </div>
-                  <DatePickerWithRange />
+                  <DatePickerWithRange onDateChange={setDateRange} />
                 </div>
                 <div className="flex items-end">
-                  <Button size="lg" className="w-full">
+                  <Button size="lg" className="w-full" onClick={handleSearch}>
                     <Search className="mr-2 h-4 w-4" />
                     Search
                   </Button>

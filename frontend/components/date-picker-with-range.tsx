@@ -10,7 +10,11 @@ import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
-export function DatePickerWithRange({ className }: React.HTMLAttributes<HTMLDivElement>) {
+interface DatePickerWithRangeProps extends React.HTMLAttributes<HTMLDivElement> {
+  onDateChange?: (dateRange: DateRange | undefined) => void
+}
+
+export function DatePickerWithRange({ className, onDateChange }: DatePickerWithRangeProps) {
   const [date, setDate] = React.useState<DateRange | undefined>({
     from: new Date(),
     to: addDays(new Date(), 2),
@@ -26,6 +30,13 @@ export function DatePickerWithRange({ className }: React.HTMLAttributes<HTMLDivE
     hour: new Date().getHours().toString().padStart(2, "0"),
     minute: new Date().getMinutes().toString().padStart(2, "0"),
   })
+
+  // Notify parent component when date changes
+  React.useEffect(() => {
+    if (onDateChange) {
+      onDateChange(date)
+    }
+  }, [date, onDateChange])
 
   // Handle date selection separately from time
   const handleDateSelect = (newDateRange: DateRange | undefined) => {
