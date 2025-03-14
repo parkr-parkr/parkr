@@ -20,7 +20,7 @@
   --primary-foreground: oklch(0.984 0.003 247.858);
   --secondary: oklch(0.968 0.007 247.896);
   --secondary-foreground: oklch(0.208 0.042 265.755);
---muted: oklch(0.968 0.007 247.896);
+  --muted: oklch(0.968 0.007 247.896);
   --muted-foreground: oklch(0.554 0.046 257.417);
   --accent: oklch(0.968 0.007 247.896);
   --accent-foreground: oklch(0.208 0.042 265.755);
@@ -119,101 +119,53 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
-body, button, input, textarea, select {
+body,
+button,
+input,
+textarea,
+select {
   cursor: auto;
 }
 
-.text-not-editable {@tailwind base;
-  @tailwind components;
-  @tailwind utilities;
-  
-  @layer base {
-    :root {
-      --background: 0 0% 100%;
-      --foreground: 222.2 84% 4.9%;
-      --card: 0 0% 100%;
-      --card-foreground: 222.2 84% 4.9%;
-      --popover: 0 0% 100%;
-      --popover-foreground: 222.2 84% 4.9%;
-      --primary: 196 100% 47%;
-      --primary-foreground: 210 40% 98%;
-      --secondary: 210 40% 96.1%;
-      --secondary-foreground: 222.2 47.4% 11.2%;
-      --muted: 210 40% 96.1%;
-      --muted-foreground: 215.4 16.3% 46.9%;
-      --accent: 210 40% 96.1%;
-      --accent-foreground: 222.2 47.4% 11.2%;
-      --destructive: 0 84.2% 60.2%;
-      --destructive-foreground: 210 40% 98%;
-      --border: 214.3 31.8% 91.4%;
-      --input: 214.3 31.8% 91.4%;
-      --ring: 196 100% 47%;
-      --radius: 0.5rem;
-    }
-  
-    .dark {
-      --background: 222.2 84% 4.9%;
-      --foreground: 210 40% 98%;
-      --card: 222.2 84% 4.9%;
-      --card-foreground: 210 40% 98%;
-      --popover: 222.2 84% 4.9%;
-      --popover-foreground: 210 40% 98%;
-      --primary: 196 100% 47%;
-      --primary-foreground: 222.2 47.4% 11.2%;
-      --secondary: 217.2 32.6% 17.5%;
-      --secondary-foreground: 210 40% 98%;
-      --muted: 217.2 32.6% 17.5%;
-      --muted-foreground: 215 20.2% 65.1%;
-      --accent: 217.2 32.6% 17.5%;
-      --accent-foreground: 210 40% 98%;
-      --destructive: 0 62.8% 30.6%;
-      --destructive-foreground: 210 40% 98%;
-      --border: 217.2 32.6% 17.5%;
-      --input: 217.2 32.6% 17.5%;
-      --ring: 196 100% 47%;
-    }
-  }
-  
-  @layer base {
-    * {
-      @apply border-border;
-    }
-    body {
-      @apply bg-background text-foreground;
-    }
-  }
-  
-  /* Prevent text cursor (I-beam) on non-editable text */
-  p,
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6,
-  span,
-  div:not([contenteditable="true"]) {
-    cursor: transparent;
-  }
-  
-  /* Allow normal cursor behavior on interactive elements */
-  a,
-  button,
-  input,
-  textarea,
-  select,
-  [role="button"] {
-    cursor: auto;
-  }
-  
-  /* Restore pointer cursor on clickable elements */
-  a,
-  button,
-  [role="button"] {
-    cursor: pointer;
-  }
-  
-  
+/* Apply these styles to prevent I-beam cursor */
+body {
+  -webkit-user-modify: read-only;
+  user-modify: read-only;
+  -webkit-user-select: text;
+  user-select: text;
+  caret-color: transparent;
+}
+
+/* Make text selectable but prevent caret */
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+span,
+div:not([contenteditable="true"]) {
+  caret-color: transparent;
+  cursor: default;
+}
+
+/* Restore caret for inputs */
+input,
+textarea,
+[contenteditable="true"] {
+  caret-color: auto;
+  cursor: text;
+}
+
+/* Restore pointer cursor for interactive elements */
+a,
+button,
+[role="button"] {
+  cursor: pointer;
+}
+
+.text-not-editable {
   cursor: default;
 }
 
@@ -225,7 +177,6 @@ body, button, input, textarea, select {
   cursor: default;
 }
 
-
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -234,3 +185,4 @@ body, button, input, textarea, select {
     @apply bg-background text-foreground;
   }
 }
+

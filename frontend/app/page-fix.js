@@ -1,14 +1,11 @@
-// Add this script to your project
-// This will run on the client side and help identify and fix the issue
-
 "use client"
 
 import { useEffect } from "react"
 
 export function PreventTextEditing() {
   useEffect(() => {
-    // Prevent text selection cursor and caret
-    document.addEventListener("mousedown", (e) => {
+    // Function to handle mousedown events
+    const handleMouseDown = (e) => {
       // Skip if the target is an input, textarea, or has contenteditable
       const target = e.target
       if (
@@ -21,7 +18,7 @@ export function PreventTextEditing() {
         return
       }
 
-      // Prevent default behavior for text elements
+      // For text elements, clear any existing selection to prevent caret
       if (
         target.tagName === "P" ||
         target.tagName === "H1" ||
@@ -33,15 +30,22 @@ export function PreventTextEditing() {
         target.tagName === "SPAN" ||
         target.tagName === "DIV"
       ) {
-        // Allow selection but prevent caret
-        document.getSelection().removeAllRanges()
+        // This prevents the caret from appearing
+        if (document.getSelection) {
+          const selection = document.getSelection()
+          if (selection.rangeCount > 0) {
+            selection.removeAllRanges()
+          }
+        }
       }
-    })
+    }
 
-    // Check for any contenteditable elements and log them
-    const editableElements = document.querySelectorAll('[contenteditable="true"]')
-    if (editableElements.length > 0) {
-      console.warn("Found contenteditable elements that might cause issues:", editableElements)
+    // Add event listener
+    document.addEventListener("mousedown", handleMouseDown)
+
+    // Clean up event listener on component unmount
+    return () => {
+      document.removeEventListener("mousedown", handleMouseDown)
     }
   }, [])
 

@@ -5,11 +5,16 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { DatePickerWithRange } from "@/components/date-picker-with-range"
 import { LocationSearch } from "@/components/location-search"
+import { PreventTextEditing } from "./page-fix"
 
 export default function Home() {
   return (
     <div className="flex min-h-screen flex-col">
+      {/* Add the client component that prevents text editing */}
+      <PreventTextEditing />
+
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        {/* Header content remains the same */}
         <div className="container max-w-6xl mx-auto flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
             <CarFront className="h-6 w-6 text-primary" />
@@ -34,6 +39,8 @@ export default function Home() {
           </div>
         </div>
       </header>
+
+      {/* Rest of the page content remains the same */}
       <main className="flex-1">
         <section className="relative">
           <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-primary/5 z-10" />
