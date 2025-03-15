@@ -21,13 +21,16 @@ export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [testResult, setTestResult] = useState<string | null>(null)
+
+
+  
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
     setIsLoading(true)
 
-    // Simulate signup process
     try {
       // Basic validation
       if (!firstName || !lastName || !email || !password) {
@@ -38,12 +41,57 @@ export default function SignupPage() {
         throw new Error("Password must be at least 8 characters long")
       }
 
-      // Here you would normally make an API call to register the user
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      // Combine first and last name for the backend
+      const name = `${firstName} ${lastName}`
+      const username = email.split("@")[0] // Generate username from email
 
-      // For demo purposes, just redirect to login
-      router.push("/login")
+      console.log("Sending registration data:", { name, email, password, username })
+
+      // Send data to Django backend with explicit CORS settings
+      const response = await fetch("http://localhost:8000/api/auth/register/", {
+        method: "POST",
+        mode: "cors",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Origin: window.location.origin,
+        },
+        body: JSON.stringify({
+          name,
+          email,
+          password,
+          username,
+        }),
+      })
+
+      console.log("Registration response status:", response.status)
+      console.log("Registration response headers:", Object.fromEntries([...response.headers.entries()]))
+
+      let data
+      try {
+        const text = await response.text()
+        console.log("Raw response text:", text)
+
+        try {
+          data = JSON.parse(text)
+          console.log("Parsed JSON data:", data)
+        } catch (jsonError) {
+          console.error("JSON parse error:", jsonError)
+          data = { error: "Could not parse server response" }
+        }
+      } catch (textError) {
+        console.error("Text read error:", textError)
+        data = { error: "Could not read server response" }
+      }
+
+      if (!response.ok) {
+        throw new Error(data?.error || `Registration failed with status ${response.status}`)
+      }
+
+      // Redirect to login on success
+      router.push("/login?registered=true")
     } catch (err) {
+      console.error("Registration error:", err)
       setError(err instanceof Error ? err.message : "An error occurred during signup")
     } finally {
       setIsLoading(false)
@@ -77,6 +125,12 @@ export default function SignupPage() {
           </div>
 
           {error && <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md">{error}</div>}
+          {testResult && (
+            <div className="bg-blue-100 text-blue-800 text-sm p-3 rounded-md mt-2 whitespace-pre-line">
+              {testResult}
+            </div>
+          )}
+
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-4">
