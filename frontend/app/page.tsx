@@ -1,24 +1,28 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { CalendarIcon, CarFront, MapPin, Search, CheckCircle2, DollarSign, Clock, ParkingCircle } from "lucide-react"
+import { CalendarIcon, CarFront, MapPin, Search, CheckCircle2, DollarSign, Clock, ParkingCircle, User, LogOut } from 'lucide-react'
 
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { DatePickerWithRange } from "@/components/date-picker-with-range"
 import { LocationSearch } from "@/components/location-search"
 import { PreventTextEditing } from "./page-fix"
+import { useAuth } from "@/components/auth-provider"
 import type { DateRange } from "react-day-picker"
 
 export default function Home() {
   const router = useRouter()
+  const { user, isLoading, logout } = useAuth()
   const [selectedLocation, setSelectedLocation] = useState("")
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: new Date(),
     to: new Date(new Date().setDate(new Date().getDate() + 2)),
   })
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
 
   const handleSearch = () => {
     if (!selectedLocation) {
@@ -41,6 +45,25 @@ export default function Home() {
     // Navigate to the map page with query parameters
     router.push(`/map?${params.toString()}`)
   }
+
+  const handleLogout = async () => {
+    await logout()
+    setIsMenuOpen(false)
+  }
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false)
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [])
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -66,17 +89,72 @@ export default function Home() {
             </Link>
           </nav>
           <div className="flex items-center gap-4">
-            <Link href="/signup" className="hidden md:block text-sm font-medium hover:underline underline-offset-4">
-              Sign Up
-            </Link>
-            <Button asChild>
-              <Link href="/login">Log In</Link>
-            </Button>
+            {isLoading ? (
+              // Show loading skeleton
+              <div className="h-10 w-20 animate-pulse rounded bg-muted"></div>
+            ) : user ? (
+              // User is logged in - show profile dropdown
+              <div className="relative" ref={menuRef}>
+                <button
+                  onClick={() => setIsMenuOpen(!isMenuOpen)}
+                  className="flex items-center justify-center h-10 w-10 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                >
+                  {user.first_name?.[0]}{user.last_name?.[0]}
+                </button>
+                
+                {isMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
+                    <div className="py-1">
+                      <div className="px-4 py-2 border-b">
+                        <p className="text-sm font-medium">{user.full_name || user.username}</p>
+                        <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                      </div>
+                      
+                      <Link 
+                        href="/profile" 
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        <User className="mr-2 h-4 w-4" />
+                        <span>Profile</span>
+                      </Link>
+                      
+                      <Link 
+                        href="/dashboard" 
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        <MapPin className="mr-2 h-4 w-4" />
+                        <span>My Bookings</span>
+                      </Link>
+                      
+                      <button
+                        onClick={handleLogout}
+                        className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        <LogOut className="mr-2 h-4 w-4" />
+                        <span>Log out</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              // User is not logged in - show login/signup buttons
+              <>
+                <Link href="/signup" className="hidden md:block text-sm font-medium hover:underline underline-offset-4">
+                  Sign Up
+                </Link>
+                <Button asChild>
+                  <Link href="/login">Log In</Link>
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </header>
 
-      {/* Rest of your component... */}
+      {/* Rest of your component remains the same */}
       <main className="flex-1">
         <section className="relative">
           <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-primary/5 z-10" />
@@ -122,6 +200,7 @@ export default function Home() {
           </div>
         </section>
 
+        {/* The rest of your sections remain unchanged */}
         <section className="py-24 bg-slate-50">
           <div className="container max-w-4xl mx-auto">
             <div className="text-center mb-12">
@@ -354,4 +433,3 @@ export default function Home() {
     </div>
   )
 }
-

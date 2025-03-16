@@ -1,12 +1,10 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
+import { AuthProvider } from "@/components/auth-provider"
 import "./globals.css"
 
-const inter = Inter({ subsets: ["latin"] })
-
 export const metadata: Metadata = {
-  title: "ParkShare - Find and Book Parking Spaces",
+  title: "ParkShare - Find and Share Parking Spaces",
   description: "Rent private driveways, garages, and parking spaces in your neighborhood.",
 }
 
@@ -17,8 +15,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className} style={{ WebkitUserModify: "read-only", userModify: "read-only" }}>
-        {children}
+      <body>
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   )
