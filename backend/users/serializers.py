@@ -38,7 +38,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             validated_data['first_name'] = name_parts[0]
             validated_data['last_name'] = name_parts[1] if len(name_parts) > 1 else ''
         
-        user = User.objects.create_user(
+        user = User(
             email=validated_data['email'],
             username=validated_data['username'],
             password=validated_data['password'],
