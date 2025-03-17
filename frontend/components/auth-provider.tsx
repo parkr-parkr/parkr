@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
+import { createContext, useContext, useEffect, useState, useRef, type ReactNode } from "react"
 
 type User = {
   id: string
@@ -8,6 +8,8 @@ type User = {
   username: string
   first_name: string
   last_name: string
+  full_name: string
+  is_verified: boolean
 }
 
 type AuthContextType = {
@@ -26,11 +28,30 @@ const BACKEND_URL = "http://localhost:8000"
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const authCheckInProgress = useRef(false)
+  const lastAuthCheck = useRef<number>(0)
+  const AUTH_CHECK_THROTTLE = 5000 // 5 seconds
 
   // Check if user is authenticated on initial load
   const checkAuth = async () => {
+    // Prevent multiple simultaneous auth checks
+    if (authCheckInProgress.current) {
+      console.log("Auth check already in progress, skipping")
+      return
+    }
+
+    // Throttle auth checks to prevent too many requests
+    const now = Date.now()
+    if (now - lastAuthCheck.current < AUTH_CHECK_THROTTLE) {
+      console.log("Auth check throttled, skipping")
+      return
+    }
+
     try {
+      authCheckInProgress.current = true
       setIsLoading(true)
+      lastAuthCheck.current = now
+
       // Use direct backend URL with trailing slash
       const response = await fetch(`${BACKEND_URL}/api/auth/profile/`, {
         credentials: "include",
@@ -39,14 +60,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (response.ok) {
         const userData = await response.json()
         setUser(userData)
+        return userData
       } else {
         setUser(null)
+        return null
       }
     } catch (error) {
       console.error("Auth check failed:", error)
       setUser(null)
+      return null
     } finally {
       setIsLoading(false)
+      authCheckInProgress.current = false
     }
   }
 
@@ -56,13 +81,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setIsLoading(true)
 
-      // Use direct backend URL with trailing slash - ENSURE THE SLASH IS INCLUDED
+      // Use direct backend URL with trailing slash
       const apiUrl = `${BACKEND_URL}/api/auth/login/`
 
       console.log("Sending login request to:", apiUrl)
-
-      // Log the exact URL to verify it has a trailing slash
-      console.log("URL with explicit slash check:", apiUrl, "Last character:", apiUrl.charAt(apiUrl.length - 1))
 
       const response = await fetch(apiUrl, {
         method: "POST",

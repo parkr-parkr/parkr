@@ -11,6 +11,7 @@ import { DatePickerWithRange } from "@/components/date-picker-with-range"
 import { LocationSearch } from "@/components/location-search"
 import { PreventTextEditing } from "./page-fix"
 import { useAuth } from "@/components/auth-provider"
+import { ListDrivewayButton } from "@/components/list-driveway-button"
 import type { DateRange } from "react-day-picker"
 
 export default function Home() {
@@ -78,9 +79,8 @@ export default function Home() {
             <span className="text-xl font-bold">ParkShare</span>
           </div>
           <nav className="hidden md:flex items-center gap-6">
-            <Link href="#" className="text-sm font-medium hover:underline underline-offset-4">
-              List Your Driveway
-            </Link>
+            {/* Replace the Link with ListDrivewayButton */}
+            <ListDrivewayButton variant="ghost" className="text-sm font-medium hover:underline underline-offset-4" />
             <Link href="#" className="text-sm font-medium hover:underline underline-offset-4">
               How It Works
             </Link>
@@ -272,9 +272,10 @@ export default function Home() {
                   </div>
                 </div>
               </div>
-              <Button size="lg" className="mt-8">
+              {/* Replace the Button with ListDrivewayButton */}
+              <ListDrivewayButton size="lg" className="mt-8">
                 Start Hosting
-              </Button>
+              </ListDrivewayButton>
             </div>
           </div>
         </section>
