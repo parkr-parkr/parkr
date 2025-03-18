@@ -9,9 +9,12 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.db import transaction
 from .models import VerificationToken
-from .util.email import send_verification_email;
+from .util.email import send_verification_email,  send_forgot_password_email
 from .serializers import UserRegistrationSerializer, UserLoginSerializer, UserProfileSerializer
 import logging
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -101,6 +104,25 @@ class VerifyEmailView(APIView):
             return Response({"message": "Email verified successfully. Please login."}, status=status.HTTP_200_OK)
         except VerificationToken.DoesNotExist:
             return Response({"error": "Invalid verification token."}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ForgotPasswordView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = request.data.get('email')
+        if not email:
+            return Response({"error": "Email is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = User.objects.get(email=email)
+
+            send_forgot_password_email(user)
+
+            return Response({"message": "Password reset email sent successfully."}, status=status.HTTP_200_OK)
+
+        except User.DoesNotExist:
+            return Response({"message": "If an account with that email exists, a password reset link has been sent."}, status=status.HTTP_200_OK)
 
 
 class UserLogoutView(APIView):
