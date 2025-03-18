@@ -15,6 +15,7 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 import dj_database_url
+import logging 
 
 load_dotenv()
 
@@ -69,7 +70,7 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -187,6 +188,8 @@ CSRF_COOKIE_HTTPONLY = False
 CSRF_USE_SESSIONS = False
 CSRF_COOKIE_SAMESITE = None
 
+FRONTEND_URL = "http://localhost:3000"
+
 APPEND_SLASH = True
 
 # REST Framework settings
@@ -199,3 +202,15 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ],
 }
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'  # Tells Django to use the SMTP backend
+
+# SMTP server details
+EMAIL_HOST = 'smtp.gmail.com'  # The SMTP server (example: Gmail)
+EMAIL_PORT = 587  # Port number for secure communication (TLS)
+EMAIL_USE_TLS = True  # Whether to use TLS (Transport Layer Security)
+
+# Authentication credentials (the email address and password)
+EMAIL_HOST_USER = 'parkr.emails@gmail.com'  # Your email address
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')  # Your email account's password or app-specific password
+DEFAULT_FROM_EMAIL = 'parkr.emails@gmail.com'  # Default email address to send from

@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager, Group, Permission
 from django.utils.translation import gettext_lazy as _
+import uuid
+
 
 class UserManager(BaseUserManager):
     """Define a model manager for User model with email as the unique identifier."""
@@ -66,10 +68,10 @@ class User(AbstractUser):
     first_name = models.CharField(_('first name'), max_length=150)
     last_name = models.CharField(_('last name'), max_length=150)
     name = models.CharField(_('full name'), max_length=300, blank=True)
-    
+
     # Additional useful fields
     is_verified = models.BooleanField(_('email verified'), default=False)
-    
+
     EMAIL_FIELD = 'email'
     USERNAME_FIELD = 'email'  # Use email for login
     REQUIRED_FIELDS = ['username']  # Required when creating superuser
@@ -87,4 +89,13 @@ class User(AbstractUser):
     def get_short_name(self):
         """Return the short name for the user."""
         return self.first_name
+
+
+class VerificationToken(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    token = models.UUIDField(default=uuid.uuid4, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return str(self.token)
 
