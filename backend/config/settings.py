@@ -15,6 +15,7 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 import dj_database_url
+import logging 
 
 load_dotenv()
 
@@ -69,7 +70,7 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

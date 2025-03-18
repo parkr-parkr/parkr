@@ -9,6 +9,7 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.db import transaction
 from .models import VerificationToken
+from .util.email import send_verification_email;
 from .serializers import UserRegistrationSerializer, UserLoginSerializer, UserProfileSerializer
 import logging
 
@@ -33,15 +34,8 @@ class UserRegistrationView(APIView):
                     verification_token = VerificationToken.objects.create(user=user)
 
                     # Send verification email
-                    verification_link = f"{settings.FRONTEND_URL}/verify-email?token={verification_token.token}"  # Replace with your actual frontend URL
-                    subject = 'Verify your email address'
-                    message = f'Please click the following link to verify your email address: {verification_link}'
-                    email_from = settings.DEFAULT_FROM_EMAIL
-                    recipient_list = [user.email]
-                
-                    
-                    send_mail(subject, message, email_from, recipient_list)
-
+                    send_verification_email(user, verification_token)
+            
                 return Response(
                     {"message": "User registered successfully. Please check your email to verify your account."},
                     status=status.HTTP_201_CREATED
