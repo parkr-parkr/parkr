@@ -9,10 +9,11 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.db import transaction
 from .models import VerificationToken
-from .util.email import send_verification_email,  send_forgot_password_email
+from .util.email import send_verification_email, send_forgot_password_email
 from .serializers import UserRegistrationSerializer, UserLoginSerializer, UserProfileSerializer
 import logging
 from django.contrib.auth import get_user_model
+from django.middleware.csrf import get_token
 
 User = get_user_model()
 
@@ -59,7 +60,11 @@ class UserLoginView(APIView):
 
     def get(self, request):
         # This endpoint is just for setting the CSRF cookie
-        return Response({"detail": "CSRF cookie set"})
+        csrf_token = get_token(request)
+        return Response({
+            "detail": "CSRF cookie set",
+            "csrf": csrf_token
+        })
 
     def post(self, request):
         logger.info("Login attempt with data: %s", request.data)
@@ -74,11 +79,27 @@ class UserLoginView(APIView):
             user = authenticate(request, email=email, password=password)
 
             if user is not None:
+                # Log session information before login
+                logger.info("Session before login: %s", request.session.session_key)
+                
+                # This is the key part - login() creates the session
                 login(request, user)
+                
+                # Set session expiry (optional) - 2 weeks
+                request.session.set_expiry(1209600)
+                
+                # Ensure the session is saved
+                request.session.save()
+                
+                # Log session information after login
                 logger.info("User logged in successfully: %s", email)
+                logger.info("Session after login: %s", request.session.session_key)
+                logger.info("Session data: %s", dict(request.session))
+                
                 return Response({
                     "message": "Login successful",
-                    "user": UserProfileSerializer(user).data
+                    "user": UserProfileSerializer(user).data,
+                    "session_id": request.session.session_key  # Include session ID for debugging
                 })
             else:
                 logger.warning("Invalid credentials for user: %s", email)
@@ -126,17 +147,62 @@ class ForgotPasswordView(APIView):
 
 
 class UserLogoutView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     def post(self, request):
-        logout(request)
-        return Response({"message": "Logout successful"})
+        # Log session information before logout
+        logger.info("Logout request received")
+    
+        # Check if user is authenticated before accessing user object
+        if request.user.is_authenticated:
+            logger.info("Logout request for user: %s", request.user)
+            logger.info("Session before logout: %s", request.session.session_key)
+        
+            # Get the session key before logout for debugging
+            session_key_before = request.session.session_key
+        
+            # Django's logout function clears the session
+            logout(request)
+        else:
+            logger.info("Logout request for unauthenticated user")
+    
+        # Explicitly clear the session
+        if hasattr(request, 'session'):
+            request.session.flush()
+            
+        # Create response
+        response = Response({"message": "Logout successful"})
+        
+        # Explicitly delete cookies with proper settings - try multiple variations
+        response.delete_cookie('sessionid', path='/', domain=None)
+        response.delete_cookie('csrftoken', path='/', domain=None)
+        response.delete_cookie('sessionid', path='')
+        response.delete_cookie('csrftoken', path='')
+        response.delete_cookie('sessionid')
+        response.delete_cookie('csrftoken')
+        
+        # Set cache control headers
+        response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response['Pragma'] = 'no-cache'
+        response['Expires'] = '0'
+        
+        # Add a header to signal this is a logout response
+        response['X-Logout-Completed'] = 'true'
+        
+        # Log session information after logout
+        logger.info("Session after logout: %s", getattr(request, 'session', {}).get('session_key', None))
+        
+        return response
 
 
 class UserProfileView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        # Log session information for debugging
+        logger.info("Profile request for user: %s", request.user)
+        logger.info("Session key: %s", request.session.session_key)
+        
         serializer = UserProfileSerializer(request.user)
         return Response(serializer.data)
 
@@ -146,4 +212,31 @@ class UserProfileView(APIView):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# Add this new view for session debugging
+class SessionDebugView(APIView):
+    """Debug view to check session status."""
+    
+    def get(self, request):
+        """Return information about the current session."""
+        # Check if the user is authenticated
+        is_authenticated = request.user.is_authenticated
+        
+        # Get session information
+        session_key = request.session.session_key
+        session_data = dict(request.session) if session_key else {}
+        
+        # Get cookie information
+        cookies = {k: v for k, v in request.COOKIES.items()}
+        
+        # Return debug information
+        return Response({
+            "is_authenticated": is_authenticated,
+            "user": str(request.user),
+            "user_id": request.user.id if is_authenticated else None,
+            "session_key": session_key,
+            "session_data": session_data,
+            "cookies": cookies,
+        })
 
