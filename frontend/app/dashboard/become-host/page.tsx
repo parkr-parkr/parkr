@@ -4,9 +4,9 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { CarFront, ArrowLeft, CheckCircle, AlertCircle } from "lucide-react"
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { useAuth } from "@/components/auth-provider"
+import { Button } from "@/components/shadcn/button"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/shadcn/card"
+import { useAuth } from "@/components/providers/auth-provider"
 import { PreventTextEditing } from "../../page-fix"
 
 export default function BecomeHostPage() {
@@ -291,7 +291,7 @@ export default function BecomeHostPage() {
   }
 
   const handleContinueToListing = () => {
-    router.push("/dashboard/list-driveway")
+    router.push("/profile/list-driveway")
   }
 
   // For development: This function will directly set the permission in local state
@@ -315,7 +315,7 @@ export default function BecomeHostPage() {
             </Link>
           </div>
           <Link
-            href="/dashboard"
+            href="/profile"
             className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" />

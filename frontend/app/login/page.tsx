@@ -7,10 +7,10 @@ import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { CarFront, ArrowLeft, Mail, Lock, Eye, EyeOff } from "lucide-react"
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Separator } from "@/components/ui/separator"
-import { useAuth } from "@/components/auth-provider"
+import { Button } from "@/components/shadcn/button"
+import { Input } from "@/components/shadcn/input"
+import { Separator } from "@/components/shadcn/separator"
+import { useAuth } from "@/components/providers/auth-provider"
 import { PreventTextEditing } from "../page-fix"
 
 export default function LoginPage() {
@@ -55,44 +55,6 @@ export default function LoginPage() {
       setError("An unexpected error occurred")
     } finally {
       setIsLoading(false)
-    }
-  }
-
-  // Test connection to backend
-  const handleTestConnection = async () => {
-    setTestResult("Testing connection...")
-
-    try {
-      // Use the backend URL from auth-provider
-      const BACKEND_URL = "http://localhost:8000"
-
-      // Test direct connection to backend - make sure to use trailing slash
-      console.log("Testing direct connection to backend...")
-      const response = await fetch(`${BACKEND_URL}/api/auth/login/`, {
-        method: "OPTIONS",
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Request-Method": "POST",
-          "Access-Control-Request-Headers": "content-type",
-          Origin: window.location.origin,
-        },
-      })
-
-      console.log("Direct connection status:", response.status)
-      console.log("Direct connection headers:", Object.fromEntries([...response.headers.entries()]))
-
-      let responseBody
-      try {
-        responseBody = await response.text()
-        console.log("Direct connection body:", responseBody.substring(0, 500))
-      } catch (error) {
-        console.error("Could not read direct response body:", error)
-      }
-
-      setTestResult(`Connection test completed with status: ${response.status}. Check console for details.`)
-    } catch (error) {
-      console.error("Connection test error:", error)
-      setTestResult(`Connection test failed: ${error instanceof Error ? error.message : String(error)}`)
     }
   }
 
@@ -151,12 +113,6 @@ export default function LoginPage() {
           {error && <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md">{error}</div>}
 
           {testResult && <div className="bg-blue-100 text-blue-800 text-sm p-3 rounded-md">{testResult}</div>}
-
-          <div className="mb-4">
-            <Button type="button" variant="outline" onClick={handleTestConnection} className="w-full">
-              Test Backend Connection
-            </Button>
-          </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-4">

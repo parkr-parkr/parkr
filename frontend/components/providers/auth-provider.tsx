@@ -36,8 +36,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const AUTH_CHECK_THROTTLE = 5000 // 5 seconds
   // Add a new state for backend status
   const [isBackendAvailable, setIsBackendAvailable] = useState<boolean | null>(null)
-  // Add a flag to prevent automatic re-authentication after logout
-  const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   // Replace the checkBackendStatus function with this version that doesn't use /api/status
   const checkBackendStatus = async () => {
@@ -78,12 +76,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Check if user is authenticated on initial load
   const checkAuth = async () => {
-    // Skip auth check if we're in the process of logging out
-    if (isLoggingOut) {
-      console.log("Skipping auth check during logout process")
-      return null
-    }
-
     // Prevent multiple simultaneous auth checks
     if (authCheckInProgress.current) {
       console.log("Auth check already in progress, skipping")
@@ -281,19 +273,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // Update the logout function to be more thorough and prevent re-authentication
-
   // Logout function
   const logout = async () => {
     try {
       console.log("Logging out user...")
       console.log("Cookies before logout:", document.cookie)
-
-      // Set the logging out flag to prevent re-authentication
-      setIsLoggingOut(true)
-
-      // Set user to null immediately to prevent any re-authentication attempts
-      setUser(null)
 
       // Try direct backend first
       try {
@@ -308,11 +292,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         })
 
         console.log("Logout response status:", response.status)
-
-        // Even if we get a 403, continue with the rest of the logout process
-        if (response.status === 403) {
-          console.log("Got 403 from logout endpoint - continuing with client-side logout")
-        }
       } catch (directError) {
         console.error("Direct logout error:", directError)
       }
@@ -346,10 +325,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           document.cookie = `${trimmedName}=; expires=Thu, 01 Jan 1970 00:00:00 GMT;`
           // Clear with path=/api
           document.cookie = `${trimmedName}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/api;`
-          // Also try with domain
-          document.cookie = `${trimmedName}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=${window.location.hostname}`
-          // Try with SameSite=Lax
-          document.cookie = `${trimmedName}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Lax`
 
           console.log(`Cleared cookie: ${trimmedName}`)
         }
@@ -358,16 +333,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Log cookies after clearing
       console.log("Cookies after clearing:", document.cookie)
 
-      // Add a longer delay before redirecting to ensure cookies are processed
-      console.log("Preparing to redirect...")
+      // Always clear the user state
+      setUser(null)
 
-      // Use a more forceful approach - completely reload the page to a specific URL
-      // This will ensure we don't carry over any state
+      // Add a small delay before redirecting to ensure cookies are processed
+      console.log("Preparing to redirect...")
       setTimeout(() => {
-        console.log("Redirecting to home page with hard reload...")
-        // Use replace instead of href to prevent adding to browser history
-        window.location.replace("/?logout=" + Date.now())
-      }, 300) // Longer delay to ensure cookies are processed
+        console.log("Redirecting to home page...")
+        // Force a page reload to clear any cached state
+        window.location.replace("/")
+      }, 100)
 
       return true
     } catch (error) {
@@ -378,20 +353,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Force a page reload as a last resort
       console.log("Error during logout, forcing page reload...")
       setTimeout(() => {
-        window.location.replace("/?logout=" + Date.now())
-      }, 300)
+        window.location.replace("/")
+      }, 100)
     }
   }
 
   // Update the useEffect to check backend status first
   useEffect(() => {
     const initAuth = async () => {
-      // Skip initialization if we're logging out
-      if (isLoggingOut) {
-        setIsLoading(false)
-        return
-      }
-
       const isAvailable = await checkBackendStatus()
       if (isAvailable) {
         checkAuth()
@@ -405,7 +374,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Check backend status periodically
     const interval = setInterval(checkBackendStatus, 60000) // every minute
     return () => clearInterval(interval)
-  }, [isLoggingOut]) // Add isLoggingOut as a dependency
+  }, [])
 
   // Update the AuthContext.Provider to include isBackendAvailable
   return (

@@ -5,13 +5,13 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { CalendarIcon, CarFront, MapPin, Search, CheckCircle2, DollarSign, Clock, ParkingCircle, User, LogOut } from 'lucide-react'
 
-import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
-import { DatePickerWithRange } from "@/components/date-picker-with-range"
-import { LocationSearch } from "@/components/location-search"
+import { Button } from "@/components/shadcn/button"
+import { Separator } from "@/components/shadcn/separator"
+import { DatePickerWithRange } from "@/components/features/date-picker-with-range"
+import { LocationSearch } from "@/components/features/location-search"
 import { PreventTextEditing } from "./page-fix"
-import { useAuth } from "@/components/auth-provider"
-import { ListDrivewayButton } from "@/components/list-driveway-button"
+import { useAuth } from "@/components/providers/auth-provider"
+import { ListDrivewayButton } from "@/components/features/list-driveway-button"
 import type { DateRange } from "react-day-picker"
 
 export default function Home() {
@@ -120,7 +120,7 @@ export default function Home() {
                       </Link>
                       
                       <Link 
-                        href="/dashboard" 
+                        href="/profile" 
                         className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                         onClick={() => setIsMenuOpen(false)}
                       >

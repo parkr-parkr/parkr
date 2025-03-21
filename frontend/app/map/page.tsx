@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { ArrowLeft, Loader2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/shadcn/button"
 import { PreventTextEditing } from "../page-fix"
 
 declare global {
