@@ -6,10 +6,10 @@ import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { ArrowLeft, Loader2, Mail, CheckCircle } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { SimpleLabel } from "@/components/ui/simple-label"
+import { Button } from "@/components/shadcn/button"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/shadcn/card"
+import { Input } from "@/components/shadcn/input"
+import { SimpleLabel } from "@/components/shadcn/simple-label"
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("")

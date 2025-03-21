@@ -4,13 +4,13 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { CarFront, Car, Calendar } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { useAuth } from "@/components/auth-provider"
+import { Button } from "@/components/shadcn/button"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/shadcn/card"
+import { useAuth } from "@/components/providers/auth-provider"
 import { PreventTextEditing } from "../page-fix"
 
 // Import the ListDrivewayButton component
-import { ListDrivewayButton } from "@/components/list-driveway-button"
+import { ListDrivewayButton } from "@/components/features/list-driveway-button"
 
 export default function DashboardPage() {
   const router = useRouter()

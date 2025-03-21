@@ -6,13 +6,13 @@ import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { CarFront, ArrowLeft, MapPin, DollarSign, Clock, ImagePlus } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
-import { useAuth } from "@/components/auth-provider"
+import { Button } from "@/components/shadcn/button"
+import { Input } from "@/components/shadcn/input"
+import { Textarea } from "@/components/shadcn/textarea"
+import { Label } from "@/components/shadcn/label"
+import { useAuth } from "@/components/providers/auth-provider"
 import { PreventTextEditing } from "@/app/page-fix"
-import { useToast } from "@/components/ui/toast-context"
+import { useToast } from "@/components/shadcn/toast-context"
 
 export default function ListDrivewayPage() {
   const router = useRouter()
@@ -98,7 +98,7 @@ export default function ListDrivewayPage() {
   // Redirect if not logged in - only check once
   useEffect(() => {
     if (!authLoading && !user) {
-      router.push("/login?redirect=/dashboard/list-driveway")
+      router.push("/login?redirect=/profile/list-driveway")
     }
   }, [user, authLoading, router])
 
@@ -113,7 +113,7 @@ export default function ListDrivewayPage() {
 
       // Add a small delay before redirecting
       const redirectTimer = setTimeout(() => {
-        router.push("/dashboard/become-host")
+        router.push("/profile/become-host")
       }, 1500)
 
       return () => clearTimeout(redirectTimer)
@@ -158,7 +158,7 @@ export default function ListDrivewayPage() {
             })
 
             setTimeout(() => {
-              router.push("/dashboard/become-host")
+              router.push("/profile/become-host")
             }, 1500)
             return
           }
@@ -195,7 +195,7 @@ export default function ListDrivewayPage() {
       })
 
       // Redirect to dashboard with success message
-      router.push("/dashboard?listed=true")
+      router.push("/profile?listed=true")
     } catch (error) {
       console.error("Error submitting listing:", error)
       toast({
@@ -259,7 +259,7 @@ export default function ListDrivewayPage() {
             </Link>
           </div>
           <Link
-            href="/dashboard"
+            href="/profile"
             className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" />

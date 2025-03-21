@@ -4,10 +4,10 @@ import type React from "react"
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { useToast } from "@/components/ui/toast-context"
+import { Button } from "@/components/shadcn/button"
+import { useToast } from "@/components/shadcn/toast-context"
 import { PlusCircle, Loader2 } from "lucide-react"
-import { useAuth } from "@/components/auth-provider"
+import { useAuth } from "@/components/providers/auth-provider"
 
 interface ListDrivewayButtonProps {
   className?: string
@@ -79,7 +79,7 @@ export function ListDrivewayButton({
       // First, check if the user is authenticated
       if (!user) {
         // If not authenticated, redirect to login
-        router.push("/login?redirect=/dashboard/list-driveway")
+        router.push("/login?redirect=/profile/list-driveway")
         return
       }
 
@@ -94,7 +94,7 @@ export function ListDrivewayButton({
 
         // If we get a 401, the user is not authenticated
         if (permissionResponse.status === 401) {
-          router.push("/login?redirect=/dashboard/list-driveway")
+          router.push("/login?redirect=/profile/list-driveway")
           return
         }
 
@@ -111,7 +111,7 @@ export function ListDrivewayButton({
 
               // If the user has permission to list a driveway, navigate directly to the form
               if (permissionData && permissionData.can_list_driveway) {
-                router.push("/dashboard/list-driveway")
+                router.push("/profile/list-driveway")
                 return
               }
             }
@@ -123,13 +123,13 @@ export function ListDrivewayButton({
         // If we're in development mode and want to bypass permission checks
         if (process.env.NODE_ENV === "development") {
           // Optional: Uncomment to bypass permission checks in development
-          // router.push("/dashboard/list-driveway");
+          // router.push("/profile/list-driveway");
           // return;
         }
 
         // If we get here, the user doesn't have permission or we couldn't verify
         // Redirect to the become-host page
-        router.push("/dashboard/become-host")
+        router.push("/profile/become-host")
       } catch (error) {
         console.error("Error during permission check:", error)
 
@@ -141,7 +141,7 @@ export function ListDrivewayButton({
         })
 
         setTimeout(() => {
-          router.push("/dashboard/become-host")
+          router.push("/profile/become-host")
         }, 1500)
       }
     } finally {

@@ -2,8 +2,8 @@
 
 import * as React from "react"
 import { MapPin, Loader2 } from "lucide-react"
-import { Input } from "@/components/ui/input"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Input } from "@/components/shadcn/input"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/shadcn/popover"
 
 interface Prediction {
   description: string
