@@ -371,9 +371,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     initAuth()
 
-    // Check backend status periodically
-    const interval = setInterval(checkBackendStatus, 60000) // every minute
-    return () => clearInterval(interval)
   }, [])
 
   // Update the AuthContext.Provider to include isBackendAvailable
