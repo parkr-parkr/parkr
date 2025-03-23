@@ -212,31 +212,3 @@ class UserProfileView(APIView):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-# Add this new view for session debugging
-class SessionDebugView(APIView):
-    """Debug view to check session status."""
-    
-    def get(self, request):
-        """Return information about the current session."""
-        # Check if the user is authenticated
-        is_authenticated = request.user.is_authenticated
-        
-        # Get session information
-        session_key = request.session.session_key
-        session_data = dict(request.session) if session_key else {}
-        
-        # Get cookie information
-        cookies = {k: v for k, v in request.COOKIES.items()}
-        
-        # Return debug information
-        return Response({
-            "is_authenticated": is_authenticated,
-            "user": str(request.user),
-            "user_id": request.user.id if is_authenticated else None,
-            "session_key": session_key,
-            "session_data": session_data,
-            "cookies": cookies,
-        })
-
