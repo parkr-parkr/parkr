@@ -67,6 +67,7 @@ class UserLoginView(APIView):
 
     def get(self, request):
         # This endpoint is just for setting the CSRF cookie
+        # I want this endpoint to also take in the session id cookie and return user info if it is valid. This is for setting login information when cookie is set on the frontend AI!
         csrf_token = get_token(request)
         return Response({
             "detail": "CSRF cookie set",
