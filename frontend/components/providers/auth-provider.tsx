@@ -72,12 +72,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log("Checking authentication status...")
 
       // First try the direct backend URL
-      // Call the recently implemented get api to populate this user data AI!
       let userData = null
 
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/auth/login/`, {
+          method: "GET",
+          credentials: "include",
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          userData = data.user
+          console.log("User data from session:", userData)
+          setUser(userData)
+        } else {
+          console.log("No user data found in session")
+          setUser(null)
+        }
+      } catch (error) {
+        console.error("Error fetching user data from session:", error)
+        setUser(null)
+      }
+
       // Update user state based on the results
-      setUser(null)
-      return null
     } finally {
       setIsLoading(false)
       authCheckInProgress.current = false
@@ -239,7 +256,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logout,
         checkAuth,
         isBackendAvailable,
-        checkBackendStatus,
         checkSession,
       }}
     >
