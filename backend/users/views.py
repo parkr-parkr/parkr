@@ -76,6 +76,8 @@ class UserLoginView(APIView):
             password = serializer.validated_data['password']
 
             logger.info("Attempting to authenticate user: %s", email)
+
+            # I want to make sure the user is verified as well here AI!
             user = authenticate(request, email=email, password=password)
 
             if user is not None:
