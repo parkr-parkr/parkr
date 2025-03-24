@@ -218,8 +218,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log("Preparing to redirect...")
       setTimeout(() => {
         console.log("Redirecting to home page...")
-        // Force a page reload to clear any cached state
-        window.location.replace("/")
+        // Navigate to home page without full refresh
+        window.location.href = "/"
       }, 100)
 
       return true
@@ -228,10 +228,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Still clear the user state
       setUser(null)
 
-      // Force a page reload as a last resort
-      console.log("Error during logout, forcing page reload...")
+      // Navigate to home page without full refresh as a last resort
+      console.log("Error during logout, navigating to home page...")
       setTimeout(() => {
-        window.location.replace("/")
+        window.location.href = "/"
       }, 100)
     }
   }
