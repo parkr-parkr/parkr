@@ -146,8 +146,8 @@ class ForgotPasswordView(APIView):
 
         try:
             user = User.objects.get(email=email)
-
-            send_forgot_password_email(user)
+            password_reset_token = PasswordResetToken.objects.create(user=user)
+            send_forgot_password_email(user, password_reset_token)
 
             return Response({"message": "Password reset email sent successfully."}, status=status.HTTP_200_OK)
         except User.DoesNotExist:
