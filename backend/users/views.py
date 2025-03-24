@@ -71,6 +71,7 @@ class UserLoginView(APIView):
         logger.info("Request headers: %s", request.headers)
 
         serializer = UserLoginSerializer(data=request.data)
+        logger.info(serializer)
         if serializer.is_valid():
             email = serializer.validated_data['email']
             password = serializer.validated_data['password']
@@ -81,11 +82,7 @@ class UserLoginView(APIView):
             logger.warning(user)
 
             if user is not None:
-                if not user.is_verified:
-                    return Response(
-                        {"error": "Your account is not verified. Please check your email."},
-                        status=status.HTTP_403_FORBIDDEN
-                    )
+            
                 # Log session information before login
                 logger.info("Session before login: %s", request.session.session_key)
 
