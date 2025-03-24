@@ -27,14 +27,14 @@ def send_verification_email(user, verification_token):
 def send_forgot_password_email(user):
     token = default_token_generator.make_token(user)
     uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
-            
+
     # Construct the password reset link
     reset_url = f"{settings.FRONTEND_URL}/reset-password/{uidb64}/{token}/"  # Replace with your frontend URL
-            
+
     subject = "Parkr Password Reset Request"
     html_message = render_to_string('reset_password.html',  {'reset_link': reset_url})
     message = "This is a fallback text message in case HTML rendering fails."  # Plain text message
-            
+
     send_mail(
         subject,
         message,

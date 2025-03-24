@@ -153,25 +153,23 @@ class ForgotPasswordView(APIView):
 class ResetPasswordView(APIView):
     permission_classes = [AllowAny]
 
-    def post(self, request):
-        serializer = ResetPasswordSerializer(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            token = serializer.validated_data['token']
-            password = serializer.validated_data['password']
+    def post(self, request, uidb64, token):
+        try:
+            uid = force_str(urlsafe_base64_decode(uidb64))
+            user = User.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            user = None
 
-            try:
-                verification_token = VerificationToken.objects.get(token=token, token_type='password_reset')
-                user = verification_token.user
-
+        if user is not None and default_token_generator.check_token(user, token):
+            serializer = ResetPasswordSerializer(data=request.data)
+            if serializer.is_valid(raise_exception=True):
+                password = serializer.validated_data['password']
                 user.set_new_password(password)
-                verification_token.delete()
-
                 return Response({"message": "Password reset successfully."}, status=status.HTTP_200_OK)
-
-            except VerificationToken.DoesNotExist:
-                raise ValidationError({"error": "Invalid reset password token."})
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({"error": "Invalid reset password token."}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class UserLogoutView(APIView):
