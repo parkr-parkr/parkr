@@ -112,7 +112,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     console.log("Login function called with email:", email)
 
-    // Check if backend is available
+    // Check if backend is available 
+    // Is this check necessary? No right? AI!
     const isAvailable = await checkBackendStatus()
     if (!isAvailable) {
       return {
