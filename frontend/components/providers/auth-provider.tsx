@@ -98,61 +98,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // First try the direct backend URL
       let userData = null
-      let directBackendSuccess = false
-
-      try {
-        // Use direct backend URL with trailing slash
-        console.log("Trying direct backend URL:", `${BACKEND_URL}/api/auth/profile/`)
-        const directResponse = await fetch(`${BACKEND_URL}/api/auth/profile/`, {
-          credentials: "include",
-        })
-
-        if (directResponse.ok) {
-          userData = await directResponse.json()
-          directBackendSuccess = true
-          console.log("Direct backend auth check successful:", userData)
-
-          // Check session for debugging
-          // await checkSession()
-        } else {
-          console.log("Direct backend auth check failed with status:", directResponse.status)
-        }
-      } catch (directError) {
-        console.error("Direct backend auth check error:", directError)
-      }
-
-      // If direct backend fails, try the Next.js API route
-      if (!directBackendSuccess) {
-        try {
-          console.log("Trying Next.js API route for auth check")
-          const nextResponse = await fetch("/api/auth/profile/", {
-            credentials: "include",
-          }).catch(error => {
-            console.error("Error during Next.js API route auth check:", error);
-            throw error; // Re-throw the error to be handled by the caller
-          })
-
-          if (nextResponse.ok) {
-            userData = await nextResponse.json()
-            console.log("Next.js API route auth check successful:", userData)
-          } else {
-            console.log("Next.js API route auth check failed with status:", nextResponse.status)
-          }
-        } catch (nextError) {
-          console.error("Next.js API route auth check error:", nextError)
-        }
-      }
 
       // Update user state based on the results
-      if (userData) {
-        setUser(userData)
-        return userData
-      } else {
-        setUser(null)
-        return null
-      }
-    } catch (error) {
-      console.error("Auth check failed:", error)
       setUser(null)
       return null
     } finally {
@@ -297,17 +244,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log("Logout response status:", response.status)
       } catch (directError) {
         console.error("Direct logout error:", directError)
-      }
-
-      // Also try the Next.js API route as a backup
-      try {
-        console.log("Trying Next.js API route for logout")
-        await fetch("/api/auth/logout/", {
-          method: "POST",
-          credentials: "include",
-        })
-      } catch (nextError) {
-        console.error("Next.js API route logout error:", nextError)
       }
 
       // Manually clear all possible cookies with different paths and domains
