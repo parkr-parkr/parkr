@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams, useParams } from "next/navigation"
 import { ArrowLeft, Loader2, Eye, EyeOff, CheckCircle, XCircle } from "lucide-react"
 import { Button } from "@/components/shadcn/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/shadcn/card"
@@ -17,9 +17,10 @@ export default function ResetPasswordPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [status, setStatus] = useState<"validating" | "ready" | "loading" | "success" | "error">("validating")
   const [message, setMessage] = useState("")
+  const [passwordError, setPasswordError] = useState("")
+  const [confirmPasswordError, setConfirmPasswordError] = useState("")
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const token = searchParams.get("token")
+  const {uidb64, token} = useParams()
 
   useEffect(() => {
     // Validate the token
@@ -29,47 +30,45 @@ export default function ResetPasswordPage() {
       return
     }
 
-    // You could verify the token with your backend here
-    const verifyToken = async () => {
-      try {
-        // Replace with your actual API endpoint
-        const response = await fetch(`http://localhost:3000/verify-reset-token?token=${token}`, {
-          method: "GET",
-        })
-
-        if (response.ok) {
-          setStatus("ready")
-        } else {
-          const data = await response.json().catch(() => ({}))
-          setStatus("error")
-          setMessage(data.message || "Invalid or expired reset token. Please request a new password reset link.")
-        }
-      } catch (error) {
-        setStatus("error")
-        setMessage("An error occurred. Please try again later.")
-      }
-    }
-
-    // Comment out the actual verification for now since we don't have the backend
-    // verifyToken()
-
-    // For demo purposes, just set to ready
     setStatus("ready")
   }, [token])
+
+  // Clear validation errors when inputs change
+  useEffect(() => {
+    setPasswordError("")
+  }, [password])
+
+  useEffect(() => {
+    setConfirmPasswordError("")
+  }, [confirmPassword])
+
+  const validatePassword = () => {
+    let isValid = true
+
+    // Reset errors
+    setPasswordError("")
+    setConfirmPasswordError("")
+
+    // Validate password length
+    if (password.length < 8) {
+      setPasswordError("Password must be at least 8 characters long")
+      isValid = false
+    }
+
+    // Validate password match
+    if (password !== confirmPassword) {
+      setConfirmPasswordError("Passwords do not match")
+      isValid = false
+    }
+
+    return isValid
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    // Password validation
-    if (password.length < 8) {
-      setStatus("error")
-      setMessage("Password must be at least 8 characters long")
-      return
-    }
-
-    if (password !== confirmPassword) {
-      setStatus("error")
-      setMessage("Passwords do not match")
+    // Validate password
+    if (!validatePassword()) {
       return
     }
 
@@ -80,12 +79,12 @@ export default function ResetPasswordPage() {
       await new Promise((resolve) => setTimeout(resolve, 300))
 
       // Replace with your actual API endpoint
-      const response = await fetch("http://localhost:3000/reset-password", {
+      const response = await fetch("http://localhost:8000/api/auth/reset-password/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ token, password }),
+        body: JSON.stringify({ uidb64, token, password }),
       })
 
       // Add another small delay before showing success/error
@@ -160,12 +159,6 @@ export default function ResetPasswordPage() {
 
           {(status === "ready" || status === "loading") && (
             <form onSubmit={handleSubmit} className="space-y-4 transition-opacity duration-200">
-              {status === "error" && (
-                <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-600">
-                  {message}
-                </div>
-              )}
-
               <div className="space-y-2">
                 <SimpleLabel htmlFor="password">New Password</SimpleLabel>
                 <div className="relative">
@@ -175,6 +168,7 @@ export default function ResetPasswordPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     disabled={status === "loading"}
+                    className={passwordError ? "border-red-300 pr-10" : "pr-10"}
                     required
                   />
                   <Button
@@ -188,7 +182,11 @@ export default function ResetPasswordPage() {
                     <span className="sr-only">{showPassword ? "Hide password" : "Show password"}</span>
                   </Button>
                 </div>
-                <p className="text-xs text-muted-foreground">Password must be at least 8 characters long</p>
+                {passwordError ? (
+                  <p className="text-xs text-red-500">{passwordError}</p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">Password must be at least 8 characters long</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -200,9 +198,11 @@ export default function ResetPasswordPage() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     disabled={status === "loading"}
+                    className={confirmPasswordError ? "border-red-300" : ""}
                     required
                   />
                 </div>
+                {confirmPasswordError && <p className="text-xs text-red-500">{confirmPasswordError}</p>}
               </div>
 
               <Button type="submit" className="w-full" disabled={status === "loading"}>

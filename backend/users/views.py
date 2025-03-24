@@ -19,6 +19,8 @@ from django.utils.http import urlsafe_base64_decode
 from django.utils.encoding import force_str
 from django.contrib.auth.tokens import default_token_generator
 from .models import PasswordResetToken
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
 
 User = get_user_model()
 
@@ -147,7 +149,8 @@ class ForgotPasswordView(APIView):
         try:
             user = User.objects.get(email=email)
             password_reset_token = PasswordResetToken.objects.create(user=user)
-            send_forgot_password_email(user, password_reset_token)
+            uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
+            send_forgot_password_email(user, uidb64, password_reset_token)
 
             return Response({"message": "Password reset email sent successfully."}, status=status.HTTP_200_OK)
         except User.DoesNotExist:
@@ -157,8 +160,10 @@ class ForgotPasswordView(APIView):
 class ResetPasswordView(APIView):
     permission_classes = [AllowAny]
 
-    def post(self, request, uidb64, token):
+    def post(self, request):
         try:
+            uidb64 = request.data.get('uidb64')
+            token = request.data.get('token')
             uid = force_str(urlsafe_base64_decode(uidb64))
             user = User.objects.get(pk=uid)
         except (TypeError, ValueError, OverflowError, User.DoesNotExist):

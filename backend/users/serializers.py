@@ -52,12 +52,12 @@ class UserLoginSerializer(serializers.Serializer):
     password = serializers.CharField(required=True, write_only=True)
 
 class ResetPasswordSerializer(serializers.Serializer):
-    password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
-    password_confirm = serializers.CharField(write_only=True, required=True)
+    # add validators=[validate_password] for password strength
+    password = serializers.CharField(write_only=True, required=True)
 
     def validate(self, attrs):
-        if attrs['password'] != attrs['password_confirm']:
-            raise serializers.ValidationError({"password": "Password fields didn't match."})
+        if not attrs['password']:
+            raise serializers.ValidationError({"password": "Password required."})
         return attrs
 
 class UserProfileSerializer(serializers.ModelSerializer):
