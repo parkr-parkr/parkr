@@ -49,6 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           "Access-Control-Request-Headers": "content-type",
           Origin: window.location.origin,
         },
+        credentials: 'include',
       })
 
       const isAvailable = response.ok || response.status === 200 || response.status === 204
@@ -127,7 +128,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ email, password }),
+          body: JSON.stringify({ email, password }),  
+          credentials: 'include',
         })
 
         console.log("Next.js API route login response status:", nextResponse.status)

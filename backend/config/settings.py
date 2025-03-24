@@ -177,10 +177,12 @@ CSRF_COOKIE_SECURE = False  # Set to True in production with HTTPS
 CSRF_TRUSTED_ORIGINS = ['http://localhost:3000', 'http://127.0.0.1:3000']
 
 # Session settings
-SESSION_COOKIE_SAMESITE = 'None'  # Use 'None' for cross-site requests with credentials
-SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'  # Use 'None' for cross-site requests with credentials
+SESSION_COOKIE_HTTPONLY = False
 SESSION_COOKIE_SECURE = False  # Set to True in production with HTTPS\
 SESSION_COOKIE_AGE = 3600
+SESSION_COOKIE_PATH = '/'
+SESSION_COOKIE_DOMAIN = '.localhost'
 
 # For development only - disable CSRF protection
 # REMOVE THIS IN PRODUCTION
