@@ -15,6 +15,9 @@ import logging
 from django.contrib.auth import get_user_model
 from django.middleware.csrf import get_token
 from rest_framework.exceptions import ValidationError
+from django.utils.http import urlsafe_base64_decode
+from django.utils.encoding import force_str
+from django.contrib.auth.tokens import default_token_generator
 
 User = get_user_model()
 
