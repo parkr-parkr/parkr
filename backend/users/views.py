@@ -76,11 +76,14 @@ class UserLoginView(APIView):
             password = serializer.validated_data['password']
 
             logger.info("Attempting to authenticate user: %s", email)
-
-            # I want to make sure the user is verified as well here AI!
             user = authenticate(request, email=email, password=password)
 
             if user is not None:
+                if not user.is_verified:
+                    return Response(
+                        {"error": "Your account is not verified. Please check your email."},
+                        status=status.HTTP_403_FORBIDDEN
+                    )
                 # Log session information before login
                 logger.info("Session before login: %s", request.session.session_key)
                 
