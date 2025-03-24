@@ -86,21 +86,21 @@ class UserLoginView(APIView):
                     )
                 # Log session information before login
                 logger.info("Session before login: %s", request.session.session_key)
-                
+
                 # This is the key part - login() creates the session
                 login(request, user)
-                
+
                 # Set session expiry (optional) - 2 weeks
                 request.session.set_expiry(1209600)
-                
+
                 # Ensure the session is saved
                 request.session.save()
-                
+
                 # Log session information after login
                 logger.info("User logged in successfully: %s", email)
                 logger.info("Session after login: %s", request.session.session_key)
                 logger.info("Session data: %s", dict(request.session))
-                
+
                 return Response({
                     "message": "Login successful",
                     "user": UserProfileSerializer(user).data,
