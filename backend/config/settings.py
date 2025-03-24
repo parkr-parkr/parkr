@@ -177,9 +177,10 @@ CSRF_COOKIE_SECURE = False  # Set to True in production with HTTPS
 CSRF_TRUSTED_ORIGINS = ['http://localhost:3000', 'http://127.0.0.1:3000']
 
 # Session settings
-SESSION_COOKIE_SAMESITE = 'Lax'  # Use 'None' for cross-site requests with credentials
+SESSION_COOKIE_SAMESITE = 'None'  # Use 'None' for cross-site requests with credentials
 SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_SECURE = False  # Set to True in production with HTTPS
+SESSION_COOKIE_SECURE = False  # Set to True in production with HTTPS\
+SESSION_COOKIE_AGE = 3600
 
 # For development only - disable CSRF protection
 # REMOVE THIS IN PRODUCTION
@@ -214,3 +215,43 @@ EMAIL_USE_TLS = True  # Whether to use TLS (Transport Layer Security)
 EMAIL_HOST_USER = 'parkr.emails@gmail.com'  # Your email address
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')  # Your email account's password or app-specific password
 DEFAULT_FROM_EMAIL = 'parkr.emails@gmail.com'  # Default email address to send from
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'INFO',  # Set to 'INFO' to capture INFO level logs and above
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+        'file': {
+            'level': 'INFO',  # Set to 'INFO' to log INFO level logs to a file
+            'class': 'logging.FileHandler',
+            'filename': 'django_info.log',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console', 'file'],  # Logs will be shown in the console and written to the file
+            'level': 'INFO',  # Set the logger level to 'INFO'
+            'propagate': True,
+        },
+        'django.request': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',  # Log request-related messages at INFO level
+            'propagate': False,
+        },
+    },
+}
