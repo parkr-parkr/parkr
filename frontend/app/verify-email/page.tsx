@@ -2,7 +2,7 @@
 
 
 import { useEffect, useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams, useParams } from "next/navigation"
 import { CheckCircle, XCircle, Loader2 } from "lucide-react"
 import { Button } from "@/components/shadcn/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/shadcn/card"
@@ -12,7 +12,7 @@ export default function VerifyEmailPage() {
   const [message, setMessage] = useState("")
   const router = useRouter()
   const searchParams = useSearchParams()
-  const token = searchParams.get("token")
+  const {token} = useParams()
 
   useEffect(() => {
     if (!token) {

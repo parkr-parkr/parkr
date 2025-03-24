@@ -51,6 +51,15 @@ class UserLoginSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
     password = serializers.CharField(required=True, write_only=True)
 
+class ResetPasswordSerializer(serializers.Serializer):
+    # add validators=[validate_password] for password strength
+    password = serializers.CharField(write_only=True, required=True)
+
+    def validate(self, attrs):
+        if not attrs['password']:
+            raise serializers.ValidationError({"password": "Password required."})
+        return attrs
+
 class UserProfileSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
     

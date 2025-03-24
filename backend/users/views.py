@@ -8,12 +8,19 @@ from django.utils.decorators import method_decorator
 from django.core.mail import send_mail
 from django.conf import settings
 from django.db import transaction
-from .models import VerificationToken
+from .models import VerificationToken, User
 from .util.email import send_verification_email, send_forgot_password_email
-from .serializers import UserRegistrationSerializer, UserLoginSerializer, UserProfileSerializer
+from .serializers import UserRegistrationSerializer, UserLoginSerializer, UserProfileSerializer, ResetPasswordSerializer
 import logging
 from django.contrib.auth import get_user_model
 from django.middleware.csrf import get_token
+from rest_framework.exceptions import ValidationError
+from django.utils.http import urlsafe_base64_decode
+from django.utils.encoding import force_str
+from django.contrib.auth.tokens import default_token_generator
+from .models import PasswordResetToken
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
 
 User = get_user_model()
 
@@ -39,12 +46,12 @@ class UserRegistrationView(APIView):
 
                     # Send verification email
                     send_verification_email(user, verification_token)
-            
+
                 return Response(
                     {"message": "User registered successfully. Please check your email to verify your account."},
                     status=status.HTTP_201_CREATED
                 )
-            
+
             except Exception as e:
                 # In case of any error, log it and return a failure response
                 logger.error(f"Error during registration: {e}")
@@ -141,13 +148,42 @@ class ForgotPasswordView(APIView):
 
         try:
             user = User.objects.get(email=email)
-
-            send_forgot_password_email(user)
+            password_reset_token = PasswordResetToken.objects.create(user=user)
+            uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
+            send_forgot_password_email(user, uidb64, password_reset_token)
 
             return Response({"message": "Password reset email sent successfully."}, status=status.HTTP_200_OK)
-
         except User.DoesNotExist:
             return Response({"message": "If an account with that email exists, a password reset link has been sent."}, status=status.HTTP_200_OK)
+
+
+class ResetPasswordView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        try:
+            uidb64 = request.data.get('uidb64')
+            token = request.data.get('token')
+            uid = force_str(urlsafe_base64_decode(uidb64))
+            user = User.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            user = None
+
+        if user is not None:
+            serializer = ResetPasswordSerializer(data=request.data)
+            if serializer.is_valid(raise_exception=True):
+                password = serializer.validated_data['password']
+                try:
+                    password_reset_token = PasswordResetToken.objects.get(user=user, token=token)
+                except PasswordResetToken.DoesNotExist:
+                    return Response({"error": "Invalid reset password token."}, status=status.HTTP_400_BAD_REQUEST)
+                user.set_new_password(password)
+                password_reset_token.delete()
+                return Response({"message": "Password reset successfully."}, status=status.HTTP_200_OK)
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({"error": "User not found."}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class UserLogoutView(APIView):
