@@ -66,13 +66,29 @@ class UserLoginView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
-        # This endpoint is just for setting the CSRF cookie
-        # I want this endpoint to also take in the session id cookie and return user info if it is valid. This is for setting login information when cookie is set on the frontend AI!
-        csrf_token = get_token(request)
-        return Response({
-            "detail": "CSRF cookie set",
-            "csrf": csrf_token
-        })
+        # Attempt to retrieve user information based on the session ID
+        if request.session.session_key:
+            try:
+                user_id = request.session['_auth_user_id']
+                user = User.objects.get(pk=user_id)
+                serializer = UserProfileSerializer(user)
+                return Response({
+                    "detail": "User info retrieved from session",
+                    "user": serializer.data,
+                    "csrf": get_token(request)  # Also return CSRF token
+                })
+            except User.DoesNotExist:
+                # If user does not exist, return a message
+                return Response({
+                    "detail": "No user found for this session",
+                    "csrf": get_token(request)
+                }, status=status.HTTP_404_NOT_FOUND)
+        else:
+            # If no session ID is present, return a message
+            return Response({
+                "detail": "No session ID provided",
+                "csrf": get_token(request)
+            }, status=status.HTTP_400_BAD_REQUEST)
 
     def post(self, request):
         logger.info("Login attempt with data: %s", request.data)
