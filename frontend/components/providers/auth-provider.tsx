@@ -37,32 +37,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Add a new state for backend status
   const [isBackendAvailable, setIsBackendAvailable] = useState<boolean | null>(null)
 
-  // Replace the checkBackendStatus function with this version that doesn't use /api/status
-  const checkBackendStatus = async () => {
-    try {
-      console.log("Checking backend availability...")
-      const response = await fetch(`${BACKEND_URL}/api/auth/login/`, {
-        method: "OPTIONS",
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Request-Method": "POST",
-          "Access-Control-Request-Headers": "content-type",
-          Origin: window.location.origin,
-        },
-        credentials: 'include',
-      })
-
-      const isAvailable = response.ok || response.status === 200 || response.status === 204
-      console.log("Backend availability check result:", isAvailable, "Status:", response.status)
-      setIsBackendAvailable(isAvailable)
-      return isAvailable
-    } catch (error) {
-      console.error("Backend availability check failed:", error)
-      setIsBackendAvailable(false)
-      return false
-    }
-  }
-
   // Simplified check session function that doesn't require a backend endpoint
   const checkSession = async () => {
     try {
@@ -98,6 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log("Checking authentication status...")
 
       // First try the direct backend URL
+      // Call the recently implemented get api to populate this user data AI!
       let userData = null
 
       // Update user state based on the results
@@ -247,12 +222,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Update the useEffect to check backend status first
   useEffect(() => {
     const initAuth = async () => {
-      const isAvailable = await checkBackendStatus()
-      if (isAvailable) {
-        checkAuth()
-      } else {
-        setIsLoading(false)
-      }
+      checkAuth()
     }
 
     initAuth()
