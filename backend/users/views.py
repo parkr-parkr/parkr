@@ -66,12 +66,29 @@ class UserLoginView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
-        # This endpoint is just for setting the CSRF cookie
-        csrf_token = get_token(request)
-        return Response({
-            "detail": "CSRF cookie set",
-            "csrf": csrf_token
-        })
+        # Attempt to retrieve user information based on the session ID
+        if request.session.session_key:
+            try:
+                user_id = request.session['_auth_user_id']
+                user = User.objects.get(pk=user_id)
+                serializer = UserProfileSerializer(user)
+                return Response({
+                    "detail": "User info retrieved from session",
+                    "user": serializer.data,
+                    "csrf": get_token(request)  # Also return CSRF token
+                })
+            except User.DoesNotExist:
+                # If user does not exist, return a message
+                return Response({
+                    "detail": "No user found for this session",
+                    "csrf": get_token(request)
+                }, status=status.HTTP_404_NOT_FOUND)
+        else:
+            # If no session ID is present, return a message
+            return Response({
+                "detail": "No session ID provided",
+                "csrf": get_token(request)
+            }, status=status.HTTP_400_BAD_REQUEST)
 
     def post(self, request):
         logger.info("Login attempt with data: %s", request.data)
@@ -152,7 +169,7 @@ class ForgotPasswordView(APIView):
             uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
             send_forgot_password_email(user, uidb64, password_reset_token)
 
-            return Response({"message": "Password reset email sent successfully."}, status=status.HTTP_200_OK)
+            return Response({"message": "If an account with that email exists, a password reset link has been sent."}, status=status.HTTP_200_OK)
         except User.DoesNotExist:
             return Response({"message": "If an account with that email exists, a password reset link has been sent."}, status=status.HTTP_200_OK)
 

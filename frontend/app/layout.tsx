@@ -1,7 +1,7 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { AuthProvider } from "@/components/providers/auth-provider"
 import { ToastProvider } from "@/components/shadcn/toast-context"
+import { AuthProvider } from "@/components/providers/auth-provider"
 import "./globals.css"
 
 export const metadata: Metadata = {
