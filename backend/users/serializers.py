@@ -53,7 +53,7 @@ class UserLoginSerializer(serializers.Serializer):
 
 class ResetPasswordSerializer(serializers.Serializer):
     token = serializers.UUIDField(required=True)
-    password = serializers.CharField(write_only=True, required=True)
+    password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
     password_confirm = serializers.CharField(write_only=True, required=True)
 
     def validate(self, attrs):

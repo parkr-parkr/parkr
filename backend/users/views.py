@@ -36,7 +36,7 @@ class UserRegistrationView(APIView):
                     user.save()
 
                     # Create verification token
-                    verification_token = VerificationToken.objects.create(user=user)
+                    verification_token = VerificationToken.objects.create(user=user, token_type='email_verification')
 
                     # Send verification email
                     send_verification_email(user, verification_token)
@@ -160,7 +160,7 @@ class ResetPasswordView(APIView):
             password = serializer.validated_data['password']
 
             try:
-                verification_token = VerificationToken.objects.get(token=token)
+                verification_token = VerificationToken.objects.get(token=token, token_type='password_reset')
                 user = verification_token.user
 
                 user.set_new_password(password)
