@@ -168,7 +168,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       console.log("Logging out user...")
       console.log("Cookies before logout:", document.cookie)
-
+      setIsLoading(true)
       try {
         // Use direct backend URL with trailing slash
         console.log("Trying direct logout")
@@ -183,8 +183,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log("Logout response status:", response.status)
       } catch (directError) {
         console.error("Direct logout error:", directError)
-      }
-
+      } 
       // Manually clear all possible cookies with different paths and domains
       console.log("Manually clearing cookies...")
 
@@ -233,6 +232,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setTimeout(() => {
         window.location.href = "/"
       }, 100)
+    } finally {
+      setIsLoading(false)
     }
   }
 
