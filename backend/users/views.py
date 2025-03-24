@@ -39,16 +39,16 @@ class UserRegistrationView(APIView):
                     user.save()
 
                     # Create verification token
-                    verification_token = VerificationToken.objects.create(user=user, token_type='email_verification')
+                    verification_token = VerificationToken.objects.create(user=user)
 
                     # Send verification email
                     send_verification_email(user, verification_token)
-            
+
                 return Response(
                     {"message": "User registered successfully. Please check your email to verify your account."},
                     status=status.HTTP_201_CREATED
                 )
-            
+
             except Exception as e:
                 # In case of any error, log it and return a failure response
                 logger.error(f"Error during registration: {e}")
@@ -163,16 +163,21 @@ class ResetPasswordView(APIView):
         except (TypeError, ValueError, OverflowError, User.DoesNotExist):
             user = None
 
-        if user is not None and default_token_generator.check_token(user, token):
+        if user is not None:
             serializer = ResetPasswordSerializer(data=request.data)
             if serializer.is_valid(raise_exception=True):
                 password = serializer.validated_data['password']
+                try:
+                    password_reset_token = PasswordResetToken.objects.get(user=user, token=token)
+                except PasswordResetToken.DoesNotExist:
+                    return Response({"error": "Invalid reset password token."}, status=status.HTTP_400_BAD_REQUEST)
                 user.set_new_password(password)
+                password_reset_token.delete()
                 return Response({"message": "Password reset successfully."}, status=status.HTTP_200_OK)
             else:
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
-            return Response({"error": "Invalid reset password token."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "User not found."}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class UserLogoutView(APIView):

@@ -95,12 +95,19 @@ class User(AbstractUser):
         self.save()
 
 
-class VerificationToken(models.Model):
+class PasswordResetToken(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     token = models.UUIDField(default=uuid.uuid4, editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
-    token_type = models.CharField(max_length=50, default='email_verification')  # Added field
+    def __str__(self):
+        return str(self.token)
+
+
+class VerificationToken(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    token = models.UUIDField(default=uuid.uuid4, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return str(self.token)
