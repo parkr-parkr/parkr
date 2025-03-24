@@ -8,12 +8,13 @@ from django.utils.decorators import method_decorator
 from django.core.mail import send_mail
 from django.conf import settings
 from django.db import transaction
-from .models import VerificationToken
+from .models import VerificationToken, User
 from .util.email import send_verification_email, send_forgot_password_email
-from .serializers import UserRegistrationSerializer, UserLoginSerializer, UserProfileSerializer
+from .serializers import UserRegistrationSerializer, UserLoginSerializer, UserProfileSerializer, ResetPasswordSerializer
 import logging
 from django.contrib.auth import get_user_model
 from django.middleware.csrf import get_token
+from rest_framework.exceptions import ValidationError
 
 User = get_user_model()
 
@@ -146,8 +147,29 @@ class ForgotPasswordView(APIView):
 
             return Response({"message": "Password reset email sent successfully."}, status=status.HTTP_200_OK)
 
-        except User.DoesNotExist:
-            return Response({"message": "If an account with that email exists, a password reset link has been sent."}, status=status.HTTP_200_OK)
+
+class ResetPasswordView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = ResetPasswordSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            token = serializer.validated_data['token']
+            password = serializer.validated_data['password']
+
+            try:
+                verification_token = VerificationToken.objects.get(token=token)
+                user = verification_token.user
+
+                user.set_new_password(password)
+                verification_token.delete()
+
+                return Response({"message": "Password reset successfully."}, status=status.HTTP_200_OK)
+
+            except VerificationToken.DoesNotExist:
+                raise ValidationError({"error": "Invalid reset password token."})
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class UserLogoutView(APIView):

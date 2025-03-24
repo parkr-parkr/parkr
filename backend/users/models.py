@@ -90,6 +90,10 @@ class User(AbstractUser):
         """Return the short name for the user."""
         return self.first_name
 
+    def set_new_password(self, password):
+        self.set_password(password)
+        self.save()
+
 
 class VerificationToken(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
