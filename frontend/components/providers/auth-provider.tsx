@@ -127,6 +127,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.log("Trying Next.js API route for auth check")
           const nextResponse = await fetch("/api/auth/profile/", {
             credentials: "include",
+          }).catch(error => {
+            console.error("Error during Next.js API route auth check:", error);
+            throw error; // Re-throw the error to be handled by the caller
           })
 
           if (nextResponse.ok) {
