@@ -112,14 +112,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     console.log("Login function called with email:", email)
 
-    const isAvailable = await checkBackendStatus()
-    if (!isAvailable) {
-      return {
-        success: false,
-        error: "Backend server is not available. Please make sure the Django server is running.",
-      }
-    }
-
     try {
       setIsLoading(true)
 
@@ -129,76 +121,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       let errorMessage = null
 
       try {
-        // Use direct backend URL with trailing slash
-        const apiUrl = `${BACKEND_URL}/api/auth/login/`
-        console.log("Trying direct login to:", apiUrl)
-
-        const directResponse = await fetch(apiUrl, {
+        console.log("Trying login through Next.js API route")
+        const nextResponse = await fetch("http://localhost:8000/api/auth/login/", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          credentials: "include",
           body: JSON.stringify({ email, password }),
         })
 
-        console.log("Direct login response status:", directResponse.status)
+        console.log("Next.js API route login response status:", nextResponse.status)
 
-        // Log cookies after login
-        console.log("Cookies after login:", document.cookie)
-
-        if (directResponse.ok) {
-          const data = await directResponse.json()
+        if (nextResponse.ok) {
+          const data = await nextResponse.json()
           userData = data.user
           loginSuccess = true
-          console.log("Direct login successful:", userData)
-
-          // Log session ID if available
-          if (data.session_id) {
-            console.log("Session ID from server:", data.session_id)
-          }
-
-          // Check session for debugging
-          // await checkSession()
+          console.log("Next.js API route login successful:", userData)
         } else {
-          const errorData = await directResponse.json().catch(() => ({ error: "Invalid response from server" }))
+          const errorData = await nextResponse.json().catch(() => ({ error: "Invalid response from server" }))
           errorMessage = errorData.error || "Login failed"
-          console.error("Direct login failed:", errorMessage)
+          console.error("Next.js API route login failed:", errorMessage)
         }
-      } catch (directError) {
-        console.error("Direct login error:", directError)
-        errorMessage = `Network error: ${directError instanceof Error ? directError.message : String(directError)}`
-      }
-
-      // If direct login fails, try through Next.js API route
-      if (!loginSuccess) {
-        try {
-          console.log("Trying login through Next.js API route")
-          const nextResponse = await fetch("/api/auth/login/", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ email, password }),
-          })
-
-          console.log("Next.js API route login response status:", nextResponse.status)
-
-          if (nextResponse.ok) {
-            const data = await nextResponse.json()
-            userData = data.user
-            loginSuccess = true
-            console.log("Next.js API route login successful:", userData)
-          } else {
-            const errorData = await nextResponse.json().catch(() => ({ error: "Invalid response from server" }))
-            errorMessage = errorData.error || "Login failed"
-            console.error("Next.js API route login failed:", errorMessage)
-          }
-        } catch (nextError) {
-          console.error("Next.js API route login error:", nextError)
-          errorMessage =
-            errorMessage || `Network error: ${nextError instanceof Error ? nextError.message : String(nextError)}`
-        }
+      } catch (nextError) {
+        console.error("Next.js API route login error:", nextError)
+        errorMessage =
+          errorMessage || `Network error: ${nextError instanceof Error ? nextError.message : String(nextError)}`
       }
 
       // Update user state based on login result
@@ -228,7 +175,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log("Logging out user...")
       console.log("Cookies before logout:", document.cookie)
 
-      // Try direct backend first
       try {
         // Use direct backend URL with trailing slash
         console.log("Trying direct logout")

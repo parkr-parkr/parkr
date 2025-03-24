@@ -78,6 +78,8 @@ class UserLoginView(APIView):
             logger.info("Attempting to authenticate user: %s", email)
             user = authenticate(request, email=email, password=password)
 
+            logger.warning(user)
+
             if user is not None:
                 if not user.is_verified:
                     return Response(
