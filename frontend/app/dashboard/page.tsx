@@ -17,20 +17,9 @@ export default function DashboardPage() {
   const { user, isLoading } = useAuth()
   const [canListDriveway, setCanListDriveway] = useState(false)
 
-  // Check if user has permission to list driveways
+  // We no longer need to check permissions here since that will happen on the list-driveway page
   useEffect(() => {
-    if (user) {
-      fetch("http://localhost:8000/api/auth/permissions/", {
-        credentials: "include",
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          setCanListDriveway(data.can_list_driveway)
-        })
-        .catch((err) => {
-          console.error("Error checking permissions:", err)
-        })
-    }
+    // This effect is intentionally left empty as we're moving permission checks to the list-driveway page
   }, [user])
 
   // Redirect if not logged in
