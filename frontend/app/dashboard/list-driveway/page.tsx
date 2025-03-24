@@ -9,7 +9,7 @@ import { CarFront, ArrowLeft, MapPin, DollarSign, Clock, ImagePlus } from "lucid
 import { Button } from "@/components/shadcn/button"
 import { Input } from "@/components/shadcn/input"
 import { Textarea } from "@/components/shadcn/textarea"
-import { Label } from "@/components/shadcn/label"
+import { SimpleLabel } from "@/components/shadcn/simple-label"
 import { useAuth } from "@/components/providers/auth-provider"
 import { PreventTextEditing } from "@/app/page-fix"
 import { useToast } from "@/components/shadcn/toast-context"
@@ -98,7 +98,7 @@ export default function ListDrivewayPage() {
   // Redirect if not logged in - only check once
   useEffect(() => {
     if (!authLoading && !user) {
-      router.push("/login?redirect=/profile/list-driveway")
+      router.push("/login?redirect=/dashboard/list-driveway")
     }
   }, [user, authLoading, router])
 
@@ -113,7 +113,7 @@ export default function ListDrivewayPage() {
 
       // Add a small delay before redirecting
       const redirectTimer = setTimeout(() => {
-        router.push("/profile/become-host")
+        router.push("/dashboard/become-host")
       }, 1500)
 
       return () => clearTimeout(redirectTimer)
@@ -158,7 +158,7 @@ export default function ListDrivewayPage() {
             })
 
             setTimeout(() => {
-              router.push("/profile/become-host")
+              router.push("/dashboard/become-host")
             }, 1500)
             return
           }
@@ -276,7 +276,7 @@ export default function ListDrivewayPage() {
           <form onSubmit={handleSubmit} className="space-y-8">
             <div className="space-y-4">
               <div>
-                <Label htmlFor="name">Listing Name</Label>
+                <SimpleLabel htmlFor="name">Listing Name</SimpleLabel>
                 <Input
                   id="name"
                   placeholder="e.g., Spacious Driveway Near Downtown"
@@ -287,7 +287,7 @@ export default function ListDrivewayPage() {
               </div>
 
               <div>
-                <Label htmlFor="address">Address</Label>
+                <SimpleLabel htmlFor="address">Address</SimpleLabel>
                 <div className="relative">
                   <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
@@ -303,22 +303,22 @@ export default function ListDrivewayPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="city">City</Label>
+                  <SimpleLabel htmlFor="city">City</SimpleLabel>
                   <Input id="city" placeholder="San Francisco" value={formData.city} onChange={handleChange} required />
                 </div>
                 <div>
-                  <Label htmlFor="state">State</Label>
+                  <SimpleLabel htmlFor="state">State</SimpleLabel>
                   <Input id="state" placeholder="CA" value={formData.state} onChange={handleChange} required />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="zip">ZIP Code</Label>
+                  <SimpleLabel htmlFor="zip">ZIP Code</SimpleLabel>
                   <Input id="zip" placeholder="94105" value={formData.zip} onChange={handleChange} required />
                 </div>
                 <div>
-                  <Label htmlFor="price">Price per Hour</Label>
+                  <SimpleLabel htmlFor="price">Price per Hour</SimpleLabel>
                   <div className="relative">
                     <DollarSign className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
@@ -337,7 +337,7 @@ export default function ListDrivewayPage() {
               </div>
 
               <div>
-                <Label htmlFor="description">Description</Label>
+                <SimpleLabel htmlFor="description">Description</SimpleLabel>
                 <Textarea
                   id="description"
                   placeholder="Describe your parking space. Include details like size, access instructions, and any restrictions."
@@ -349,7 +349,7 @@ export default function ListDrivewayPage() {
               </div>
 
               <div>
-                <Label>Photos</Label>
+                <SimpleLabel>Photos</SimpleLabel>
                 <div className="mt-2 border-2 border-dashed rounded-md border-muted p-8 text-center">
                   <ImagePlus className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
                   <p className="text-sm text-muted-foreground mb-2">Drag and drop photos here, or click to upload</p>
@@ -360,7 +360,7 @@ export default function ListDrivewayPage() {
               </div>
 
               <div>
-                <Label htmlFor="availability">Availability</Label>
+                <SimpleLabel htmlFor="availability">Availability</SimpleLabel>
                 <div className="mt-2 p-4 border rounded-md">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium">Monday - Friday</span>

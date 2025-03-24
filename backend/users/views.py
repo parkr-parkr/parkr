@@ -152,7 +152,7 @@ class ForgotPasswordView(APIView):
             uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
             send_forgot_password_email(user, uidb64, password_reset_token)
 
-            return Response({"message": "Password reset email sent successfully."}, status=status.HTTP_200_OK)
+            return Response({"message": "If an account with that email exists, a password reset link has been sent."}, status=status.HTTP_200_OK)
         except User.DoesNotExist:
             return Response({"message": "If an account with that email exists, a password reset link has been sent."}, status=status.HTTP_200_OK)
 
