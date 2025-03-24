@@ -9,7 +9,7 @@ import { CarFront, ArrowLeft, MapPin, DollarSign, Clock, ImagePlus } from "lucid
 import { Button } from "@/components/shadcn/button"
 import { Input } from "@/components/shadcn/input"
 import { Textarea } from "@/components/shadcn/textarea"
-import { SimpleLabel } from "@/components/shadcn/simple-label"
+import { Label } from "@/components/shadcn/label"
 import { useAuth } from "@/components/providers/auth-provider"
 import { PreventTextEditing } from "@/app/page-fix"
 import { useToast } from "@/components/shadcn/toast-context"
@@ -195,7 +195,7 @@ export default function ListDrivewayPage() {
       })
 
       // Redirect to dashboard with success message
-      router.push("/profile?listed=true")
+      router.push("/dashboard?listed=true")
     } catch (error) {
       console.error("Error submitting listing:", error)
       toast({
@@ -259,7 +259,7 @@ export default function ListDrivewayPage() {
             </Link>
           </div>
           <Link
-            href="/profile"
+            href="/dashboard"
             className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -276,7 +276,7 @@ export default function ListDrivewayPage() {
           <form onSubmit={handleSubmit} className="space-y-8">
             <div className="space-y-4">
               <div>
-                <SimpleLabel htmlFor="name">Listing Name</SimpleLabel>
+                <Label htmlFor="name">Listing Name</Label>
                 <Input
                   id="name"
                   placeholder="e.g., Spacious Driveway Near Downtown"
@@ -287,7 +287,7 @@ export default function ListDrivewayPage() {
               </div>
 
               <div>
-                <SimpleLabel htmlFor="address">Address</SimpleLabel>
+                <Label htmlFor="address">Address</Label>
                 <div className="relative">
                   <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
@@ -303,22 +303,22 @@ export default function ListDrivewayPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <SimpleLabel htmlFor="city">City</SimpleLabel>
+                  <Label htmlFor="city">City</Label>
                   <Input id="city" placeholder="San Francisco" value={formData.city} onChange={handleChange} required />
                 </div>
                 <div>
-                  <SimpleLabel htmlFor="state">State</SimpleLabel>
+                  <Label htmlFor="state">State</Label>
                   <Input id="state" placeholder="CA" value={formData.state} onChange={handleChange} required />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <SimpleLabel htmlFor="zip">ZIP Code</SimpleLabel>
+                  <Label htmlFor="zip">ZIP Code</Label>
                   <Input id="zip" placeholder="94105" value={formData.zip} onChange={handleChange} required />
                 </div>
                 <div>
-                  <SimpleLabel htmlFor="price">Price per Hour</SimpleLabel>
+                  <Label htmlFor="price">Price per Hour</Label>
                   <div className="relative">
                     <DollarSign className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
@@ -337,7 +337,7 @@ export default function ListDrivewayPage() {
               </div>
 
               <div>
-                <SimpleLabel htmlFor="description">Description</SimpleLabel>
+                <Label htmlFor="description">Description</Label>
                 <Textarea
                   id="description"
                   placeholder="Describe your parking space. Include details like size, access instructions, and any restrictions."
@@ -349,7 +349,7 @@ export default function ListDrivewayPage() {
               </div>
 
               <div>
-                <SimpleLabel>Photos</SimpleLabel>
+                <Label>Photos</Label>
                 <div className="mt-2 border-2 border-dashed rounded-md border-muted p-8 text-center">
                   <ImagePlus className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
                   <p className="text-sm text-muted-foreground mb-2">Drag and drop photos here, or click to upload</p>
@@ -360,7 +360,7 @@ export default function ListDrivewayPage() {
               </div>
 
               <div>
-                <SimpleLabel htmlFor="availability">Availability</SimpleLabel>
+                <Label htmlFor="availability">Availability</Label>
                 <div className="mt-2 p-4 border rounded-md">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium">Monday - Friday</span>
@@ -396,293 +396,3 @@ export default function ListDrivewayPage() {
   )
 }
 
-"use client"
-
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
-import { CarFront, AlertCircle, Loader2 } from "lucide-react"
-import { Button } from "@/components/shadcn/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/shadcn/card"
-import { Alert, AlertDescription, AlertTitle } from "@/components/shadcn/alert"
-import { useAuth } from "@/components/providers/auth-provider"
-import { useToast } from "@/components/shadcn/toast-context"
-import { PreventTextEditing } from "../../page-fix"
-
-export default function ListDrivewayPage() {
-  const router = useRouter()
-  const { user, isLoading: authLoading } = useAuth()
-  const { toast } = useToast()
-  const [hasPermission, setHasPermission] = useState<boolean | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isCheckingPermission, setIsCheckingPermission] = useState(true)
-  
-  // Form state would go here
-  const [formData, setFormData] = useState({
-    address: "",
-    description: "",
-    price: "",
-    // Add other fields as needed
-  })
-
-  // Check if user is authenticated
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.push("/login?redirect=/dashboard/list-driveway")
-    }
-  }, [user, authLoading, router])
-
-  // Check if user has permission to list driveways
-  useEffect(() => {
-    if (user) {
-      checkPermission()
-    }
-  }, [user])
-
-  const checkPermission = async () => {
-    if (!user) return
-
-    try {
-      setIsCheckingPermission(true)
-      console.log("Checking permissions...")
-      const permissionResponse = await fetch("http://localhost:8000/api/auth/permissions/", {
-        credentials: "include",
-      })
-
-      console.log("Permission check response:", permissionResponse.status)
-
-      if (permissionResponse.ok) {
-        try {
-          const data = await permissionResponse.json()
-          console.log("Permission data:", data)
-          setHasPermission(data.can_list_driveway)
-          
-          // If no permission, show toast and redirect after a delay
-          if (!data.can_list_driveway) {
-            toast({
-              title: "Permission Required",
-              description: "You need to become a host before listing a driveway.",
-              variant: "destructive",
-            })
-            
-            setTimeout(() => {
-              router.push("/dashboard/become-host")
-            }, 2000)
-          }
-        } catch (parseError) {
-          console.error("Failed to parse permission response:", parseError)
-          setHasPermission(false)
-          handlePermissionError()
-        }
-      } else {
-        setHasPermission(false)
-        handlePermissionError()
-      }
-    } catch (error) {
-      console.error("Error checking permissions:", error)
-      setHasPermission(false)
-      handlePermissionError()
-    } finally {
-      setIsCheckingPermission(false)
-    }
-  }
-
-  const handlePermissionError = () => {
-    toast({
-      title: "Permission check failed",
-      description: "Redirecting to host registration page...",
-      variant: "destructive",
-    })
-
-    setTimeout(() => {
-      router.push("/dashboard/become-host")
-    }, 1500)
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (!hasPermission) {
-      toast({
-        title: "Permission Required",
-        description: "You need to become a host before listing a driveway.",
-        variant: "destructive",
-      })
-      return
-    }
-    
-    setIsSubmitting(true)
-    
-    try {
-      // Submit form data to backend
-      // This is a placeholder for the actual implementation
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      toast({
-        title: "Success!",
-        description: "Your driveway has been listed.",
-      })
-      
-      // Redirect to dashboard or listings page
-      router.push("/dashboard")
-    } catch (error) {
-      console.error("Error submitting form:", error)
-      toast({
-        title: "Submission failed",
-        description: "Please try again later.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  if (authLoading || isCheckingPermission) {
-    return (
-      <div className="flex min-h-screen flex-col">
-        <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="container max-w-6xl mx-auto flex h-16 items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Link href="/" className="flex items-center gap-2">
-                <CarFront className="h-6 w-6 text-primary" />
-                <span className="text-xl font-bold">ParkShare</span>
-              </Link>
-            </div>
-          </div>
-        </header>
-        <main className="flex-1 flex items-center justify-center">
-          <div className="flex flex-col items-center gap-2">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p>Checking permissions...</p>
-          </div>
-        </main>
-      </div>
-    )
-  }
-
-  if (!user) {
-    return null // Will redirect via useEffect
-  }
-
-  if (hasPermission === false) {
-    return (
-      <div className="flex min-h-screen flex-col">
-        <PreventTextEditing />
-        <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="container max-w-6xl mx-auto flex h-16 items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Link href="/" className="flex items-center gap-2">
-                <CarFront className="h-6 w-6 text-primary" />
-                <span className="text-xl font-bold">ParkShare</span>
-              </Link>
-            </div>
-            <Link href="/dashboard" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-              Back to Dashboard
-            </Link>
-          </div>
-        </header>
-        <main className="flex-1 container max-w-6xl mx-auto py-12 px-4">
-          <Alert variant="destructive" className="mb-6">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Permission Required</AlertTitle>
-            <AlertDescription>
-              You need to become a host before listing a driveway. Redirecting...
-            </AlertDescription>
-          </Alert>
-          <div className="flex justify-center">
-            <Button onClick={() => router.push("/dashboard/become-host")}>
-              Become a Host
-            </Button>
-          </div>
-        </main>
-      </div>
-    )
-  }
-
-  return (
-    <div className="flex min-h-screen flex-col">
-      <PreventTextEditing />
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container max-w-6xl mx-auto flex h-16 items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Link href="/" className="flex items-center gap-2">
-              <CarFront className="h-6 w-6 text-primary" />
-              <span className="text-xl font-bold">ParkShare</span>
-            </Link>
-          </div>
-          <Link href="/dashboard" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-            Back to Dashboard
-          </Link>
-        </div>
-      </header>
-      <main className="flex-1 container max-w-6xl mx-auto py-12 px-4">
-        <h1 className="text-3xl font-bold mb-2">List Your Driveway</h1>
-        <p className="text-muted-foreground mb-8">Share your driveway and earn money</p>
-
-        <Card className="max-w-2xl mx-auto">
-          <CardHeader>
-            <CardTitle>Driveway Details</CardTitle>
-            <CardDescription>Provide information about your driveway</CardDescription>
-          </CardHeader>
-          <form onSubmit={handleSubmit}>
-            <CardContent className="space-y-4">
-              {/* Form fields would go here */}
-              <div className="space-y-2">
-                <label htmlFor="address" className="text-sm font-medium">Address</label>
-                <input
-                  id="address"
-                  type="text"
-                  className="w-full p-2 border rounded-md"
-                  value={formData.address}
-                  onChange={(e) => setFormData({...formData, address: e.target.value})}
-                  required
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <label htmlFor="description" className="text-sm font-medium">Description</label>
-                <textarea
-                  id="description"
-                  className="w-full p-2 border rounded-md"
-                  value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  rows={4}
-                  required
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <label htmlFor="price" className="text-sm font-medium">Price per hour ($)</label>
-                <input
-                  id="price"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  className="w-full p-2 border rounded-md"
-                  value={formData.price}
-                  onChange={(e) => setFormData({...formData, price: e.target.value})}
-                  required
-                />
-              </div>
-            </CardContent>
-            <CardFooter className="flex justify-between">
-              <Button type="button" variant="outline" onClick={() => router.push("/dashboard")}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Submitting...
-                  </>
-                ) : (
-                  "List Driveway"
-                )}
-              </Button>
-            </CardFooter>
-          </form>
-        </Card>
-      </main>
-    </div>
-  )
-}
