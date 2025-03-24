@@ -39,30 +39,18 @@ export default function ListDrivewayPage() {
     setFormData((prev) => ({ ...prev, [id]: value }))
   }
 
-  // Check if user has permission to list driveways - with limits on attempts
+  // Simplified permission check
   useEffect(() => {
     const checkPermission = async () => {
       if (!user) return
-      if (permissionCheckAttempts.current >= maxPermissionCheckAttempts) {
-        console.log("Max permission check attempts reached, stopping checks")
-        setIsCheckingPermission(false)
-        // For development, assume permission is granted after max attempts
-        if (process.env.NODE_ENV === "development") {
-          setHasPermission(true)
-        }
-        return
-      }
-
+      
       setIsCheckingPermission(true)
-      permissionCheckAttempts.current += 1
-
+      
       try {
-        console.log(`Permission check attempt ${permissionCheckAttempts.current}/${maxPermissionCheckAttempts}`)
+        console.log("Checking driveway listing permission...")
         const response = await fetch("http://localhost:8000/api/auth/permissions/", {
           credentials: "include",
         })
-
-        console.log("Permission check response:", response.status)
 
         if (response.ok) {
           try {
@@ -71,7 +59,7 @@ export default function ListDrivewayPage() {
             setHasPermission(data.can_list_driveway)
           } catch (error) {
             console.error("Error parsing permission response:", error)
-            // For development, optionally set to true
+            // For development, set to true to make testing easier
             if (process.env.NODE_ENV === "development") {
               setHasPermission(true)
             } else {
@@ -83,17 +71,22 @@ export default function ListDrivewayPage() {
         }
       } catch (error) {
         console.error("Error checking permissions:", error)
-        setHasPermission(false)
+        // For development, set to true to make testing easier
+        if (process.env.NODE_ENV === "development") {
+          setHasPermission(true)
+        } else {
+          setHasPermission(false)
+        }
       } finally {
         setIsCheckingPermission(false)
       }
     }
 
-    // Only check permission once when the component mounts
-    if (user && hasPermission === null) {
+    // Check permission when the component mounts
+    if (user) {
       checkPermission()
     }
-  }, [user, hasPermission])
+  }, [user])
 
   // Redirect if not logged in - only check once
   useEffect(() => {
@@ -107,7 +100,7 @@ export default function ListDrivewayPage() {
     if (!isCheckingPermission && hasPermission === false) {
       toast({
         title: "Permission Required",
-        description: "You need permission to list a driveway. Redirecting...",
+        description: "You need to become a host before listing a driveway.",
         variant: "destructive",
       })
 
@@ -120,51 +113,11 @@ export default function ListDrivewayPage() {
     }
   }, [hasPermission, router, toast, isCheckingPermission])
 
-  // Add a timeout to prevent infinite loading
-  useEffect(() => {
-    const loadingTimeout = setTimeout(() => {
-      if (isCheckingPermission) {
-        console.log("Loading timeout reached, stopping permission check")
-        setIsCheckingPermission(false)
-        // For development, assume permission is granted after timeout
-        if (process.env.NODE_ENV === "development") {
-          setHasPermission(true)
-        }
-      }
-    }, 5000) // 5 second timeout
-
-    return () => clearTimeout(loadingTimeout)
-  }, [isCheckingPermission])
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
 
     try {
-      // Skip permission check in development to avoid excessive API calls
-      if (process.env.NODE_ENV !== "development") {
-        // Double-check permission before submitting
-        const permissionResponse = await fetch("http://localhost:8000/api/auth/permissions/", {
-          credentials: "include",
-        })
-
-        if (permissionResponse.ok) {
-          const permData = await permissionResponse.json()
-          if (!permData.can_list_driveway) {
-            toast({
-              title: "Permission Required",
-              description: "You need permission to list a driveway. Redirecting...",
-              variant: "destructive",
-            })
-
-            setTimeout(() => {
-              router.push("/dashboard/become-host")
-            }, 1500)
-            return
-          }
-        }
-      }
-
       // Validate form data
       if (
         !formData.name ||

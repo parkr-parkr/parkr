@@ -29,48 +29,10 @@ export function ListDrivewayButton({
   const [hasPermission, setHasPermission] = useState<boolean | null>(null)
   const [permissionChecked, setPermissionChecked] = useState(false)
 
-  // Check permission when component mounts or user changes
+  // We no longer need to check permission here as we'll handle it on the list-driveway page
   useEffect(() => {
-    if (user) {
-      checkPermission()
-    }
+    // This effect is intentionally left empty
   }, [user])
-
-  const checkPermission = async () => {
-    if (!user) return
-
-    try {
-      console.log("Checking permissions...")
-      const permissionResponse = await fetch("http://localhost:8000/api/auth/permissions/", {
-        credentials: "include",
-      })
-
-      console.log("Permission check response:", permissionResponse.status)
-
-      if (permissionResponse.ok) {
-        try {
-          const data = await permissionResponse.json()
-          console.log("Permission data:", data)
-          setHasPermission(data.can_list_driveway)
-        } catch (parseError) {
-          console.error("Failed to parse permission response:", parseError)
-          // For development, optionally assume permission
-          if (process.env.NODE_ENV === "development") {
-            setHasPermission(true)
-          } else {
-            setHasPermission(false)
-          }
-        }
-      } else {
-        setHasPermission(false)
-      }
-    } catch (error) {
-      console.error("Error checking permissions:", error)
-      setHasPermission(false)
-    } finally {
-      setPermissionChecked(true)
-    }
-  }
 
   const handleClick = async () => {
     setIsLoading(true)

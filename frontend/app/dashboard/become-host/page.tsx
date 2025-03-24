@@ -443,3 +443,144 @@ export default function BecomeHostPage() {
   )
 }
 
+"use client"
+
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import Link from "next/link"
+import { CarFront, ArrowLeft, CheckCircle } from "lucide-react"
+import { Button } from "@/components/shadcn/button"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/shadcn/card"
+import { useAuth } from "@/components/providers/auth-provider"
+import { useToast } from "@/components/shadcn/toast-context"
+import { PreventTextEditing } from "@/app/page-fix"
+
+export default function BecomeHostPage() {
+  const router = useRouter()
+  const { user } = useAuth()
+  const { toast } = useToast()
+  const [isLoading, setIsLoading] = useState(false)
+  const [isSuccess, setIsSuccess] = useState(false)
+
+  const handleBecomeHost = async () => {
+    if (!user) {
+      router.push("/login?redirect=/dashboard/become-host")
+      return
+    }
+
+    setIsLoading(true)
+
+    try {
+      // Make the request to the Django backend to grant permission
+      const response = await fetch("http://localhost:8000/api/auth/grant_driveway_permission/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      })
+
+      if (response.ok) {
+        setIsSuccess(true)
+        toast({
+          title: "Success!",
+          description: "You are now a host and can list your driveway.",
+        })
+        
+        // Redirect to the list-driveway page after a short delay
+        setTimeout(() => {
+          router.push("/dashboard/list-driveway")
+        }, 1500)
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to become a host. Please try again.",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      console.error("Error becoming a host:", error)
+      toast({
+        title: "Error",
+        description: "Something went wrong. Please try again later.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  return (
+    <div className="flex min-h-screen flex-col">
+      <PreventTextEditing />
+
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container max-w-6xl mx-auto flex h-16 items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Link href="/" className="flex items-center gap-2">
+              <CarFront className="h-6 w-6 text-primary" />
+              <span className="text-xl font-bold">ParkShare</span>
+            </Link>
+          </div>
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Dashboard
+          </Link>
+        </div>
+      </header>
+
+      <main className="flex-1 container max-w-6xl mx-auto py-12 px-4">
+        <div className="max-w-md mx-auto">
+          <h1 className="text-3xl font-bold mb-2">Become a Host</h1>
+          <p className="text-muted-foreground mb-8">Start sharing your driveway and earn extra income</p>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Ready to become a host?</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isSuccess ? (
+                <div className="flex flex-col items-center text-center py-6">
+                  <div className="rounded-full bg-green-100 p-3 mb-4">
+                    <CheckCircle className="h-8 w-8 text-green-600" />
+                  </div>
+                  <h3 className="text-lg font-medium mb-2">You're now a host!</h3>
+                  <p className="text-muted-foreground">
+                    You can now list your driveway and start earning. Redirecting to the listing page...
+                  </p>
+                </div>
+              ) : (
+                <p>
+                  By becoming a host, you'll be able to list your driveway on ParkShare and earn money by renting out
+                  your unused parking space.
+                </p>
+              )}
+            </CardContent>
+            <CardFooter>
+              {!isSuccess && (
+                <Button 
+                  className="w-full" 
+                  onClick={handleBecomeHost} 
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Processing..." : "Become a Host"}
+                </Button>
+              )}
+            </CardFooter>
+          </Card>
+        </div>
+      </main>
+
+      <footer className="border-t py-6">
+        <div className="container max-w-6xl mx-auto px-4">
+          <p className="text-center text-sm text-muted-foreground">
+            © {new Date().getFullYear()} ParkShare, Inc. All rights reserved.
+          </p>
+        </div>
+      </footer>
+    </div>
+  )
+}
