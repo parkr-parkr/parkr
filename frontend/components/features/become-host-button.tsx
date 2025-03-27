@@ -22,7 +22,7 @@ export function BecomeHostButton({
   const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
   const router = useRouter()
-  const { user, refreshUser } = useAuth()
+  const { user, checkAuth } = useAuth()
 
   const handleClick = async () => {
     if (!user) {
@@ -97,12 +97,12 @@ export function BecomeHostButton({
       }
       
       // Refresh the user data to update the UI
-      if (typeof refreshUser === 'function') {
+      if (typeof checkAuth === 'function') {
         console.log("Refreshing user data...");
-        await refreshUser();
-        console.log("User data refreshed:", user);
+        await checkAuth();
+        console.log("User data refreshed");
       } else {
-        console.warn("refreshUser is not a function, cannot refresh user data");
+        console.warn("checkAuth is not a function, cannot refresh user data");
         // Force a page reload as fallback
         window.location.reload();
       }
