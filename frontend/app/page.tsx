@@ -12,12 +12,12 @@ import { LocationSearch } from "@/components/features/location-search"
 import { PreventTextEditing } from "./page-fix"
 import { useAuth } from "@/components/providers/auth-provider"
 import { ListDrivewayButton } from "@/components/features/list-driveway-button"
+import { BecomeHostButton } from "@/components/features/become-host-button"
 import type { DateRange } from "react-day-picker"
 
 export default function Home() {
   const router = useRouter()
-  const [isLoading, setIsLoading] = useState(false)
-  const { user, logout } = useAuth()
+  const { user, isLoading, logout } = useAuth()
   const [selectedLocation, setSelectedLocation] = useState("")
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: new Date(),
@@ -49,10 +49,8 @@ export default function Home() {
   }
 
   const handleLogout = async () => {
-    setIsLoading(true)
     await logout()
     setIsMenuOpen(false)
-    setIsLoading(false)
   }
 
   // Close menu when clicking outside
@@ -69,26 +67,6 @@ export default function Home() {
     }
   }, [])
 
-  if (isLoading) {
-    return (
-      <div className="flex min-h-screen flex-col">
-        <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="container max-w-6xl mx-auto flex h-16 items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Link href="/" className="flex items-center gap-2">
-                <CarFront className="h-6 w-6 text-primary" />
-                <span className="text-xl font-bold">ParkShare</span>
-              </Link>
-            </div>
-          </div>
-        </header>
-        <main className="flex-1 flex items-center justify-center">
-          <div className="animate-pulse text-lg">Loading...</div>
-        </main>
-      </div>
-    )
-  }
-
   return (
     <div className="flex min-h-screen flex-col">
       {/* Add the client component that prevents text editing */}
@@ -104,6 +82,7 @@ export default function Home() {
           <nav className="hidden md:flex items-center gap-6">
             {/* Replace the Link with ListDrivewayButton */}
             <ListDrivewayButton variant="ghost" className="text-sm font-medium hover:underline underline-offset-4" />
+            <BecomeHostButton/>
             <Link href="#" className="text-sm font-medium hover:underline underline-offset-4">
               How It Works
             </Link>
@@ -143,7 +122,7 @@ export default function Home() {
                       </Link>
                       
                       <Link 
-                        href="/profile" 
+                        href="/dashboard" 
                         className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                         onClick={() => setIsMenuOpen(false)}
                       >

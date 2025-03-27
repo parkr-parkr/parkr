@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Button } from "@/components/shadcn/button"
 import { useToast } from "@/components/shadcn/use-toast"
 import { useRouter } from "next/navigation"
-import { useAuth } from "@/lib/auth-context"
+import { useAuth } from "@/components/providers/auth-provider"
 
 interface BecomeHostButtonProps {
   className?: string
