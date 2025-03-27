@@ -71,6 +71,7 @@ class User(AbstractUser):
 
     # Additional useful fields
     is_verified = models.BooleanField(_('email verified'), default=False)
+    can_list_driveway = models.BooleanField(_('can list driveway'), default=False)
 
     EMAIL_FIELD = 'email'
     USERNAME_FIELD = 'email'  # Use email for login

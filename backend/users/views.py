@@ -269,3 +269,50 @@ class UserProfileView(APIView):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class BecomeHostView(APIView):
+    """
+    API endpoint that allows users to become hosts by setting can_list_driveway to True.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        logger.info("BecomeHostView: Request received")
+        logger.info(f"BecomeHostView: Headers: {dict(request.headers)}")
+        logger.info(f"BecomeHostView: Cookies: {request.COOKIES}")
+        
+        # Check if user is authenticated
+        if not request.user.is_authenticated:
+            logger.warning("BecomeHostView: User is not authenticated")
+            return Response({
+                "error": "Authentication required"
+            }, status=status.HTTP_401_UNAUTHORIZED)
+        
+        try:
+            # Get the user from the request
+            user = request.user
+            logger.info(f"BecomeHostView: User {user.email}")
+            
+            # Update the user's can_list_driveway attribute
+            user.can_list_driveway = True
+            user.save()
+            
+            # Verify the change was saved
+            user.refresh_from_db()
+            logger.info(f"BecomeHostView: Updated can_list_driveway value: {user.can_list_driveway}")
+            
+            logger.info(f"User {user.email} became a host")
+            
+            serializer = UserProfileSerializer(user)
+            return Response({
+                "message": "You are now a host and can list driveways",
+                "user": serializer.data
+            }, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            logger.error(f"BecomeHostView: Error occurred: {str(e)}", exc_info=True)
+            return Response({
+                "error": "An error occurred while processing your request"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
