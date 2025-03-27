@@ -38,10 +38,12 @@ export function BecomeHostButton({
       const BACKEND_URL = "http://localhost:8000";
       const response = await fetch(`${BACKEND_URL}/api/auth/become-host/`, {
         method: "POST",
-        credentials: "include",
+        mode: "cors",
         headers: {
-          "Content-Type": "application/json"
-        }
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Origin: window.location.origin,
+        },
       });
 
       console.log("Response status:", response.status);
