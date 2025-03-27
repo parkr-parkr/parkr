@@ -271,7 +271,7 @@ class UserProfileView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@method_decorator(csrf_exempt, name='dispatch')
+
 class BecomeHostView(APIView):
     """
     API endpoint that allows users to become hosts by setting can_list_driveway to True.
