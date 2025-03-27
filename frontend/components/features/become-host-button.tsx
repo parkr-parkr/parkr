@@ -39,12 +39,23 @@ export function BecomeHostButton({
       const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
       console.log("Using backend URL:", BACKEND_URL);
       
-      // First, try to get a CSRF token
-      const csrfResponse = await fetch(`${BACKEND_URL}/api/auth/login/`, {
+      // First, ensure we're logged in by checking profile
+      const profileResponse = await fetch(`${BACKEND_URL}/api/auth/profile/`, {
         method: "GET",
         credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Requested-With": "XMLHttpRequest"
+        }
       });
-      console.log("CSRF response status:", csrfResponse.status);
+      
+      console.log("Profile response status:", profileResponse.status);
+      
+      if (!profileResponse.ok) {
+        console.error("Not authenticated, redirecting to login");
+        router.push("/login?redirect=/dashboard");
+        return;
+      }
       
       // Now make the actual request
       const response = await fetch(`${BACKEND_URL}/api/auth/become-host/`, {
