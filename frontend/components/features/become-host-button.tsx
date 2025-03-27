@@ -34,70 +34,23 @@ export function BecomeHostButton({
     try {
       console.log("Sending become host request...");
       
-      // Make direct request to the backend
-      const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
-      
-      // First get a CSRF token
-      const csrfResponse = await fetch(`${BACKEND_URL}/api/auth/login/`, {
-        method: "GET",
-        credentials: "include",
-      });
-      
-      // Extract the CSRF token from cookies
-      const cookies = document.cookie.split(';');
-      const csrfCookie = cookies.find(cookie => cookie.trim().startsWith('csrftoken='));
-      const csrfToken = csrfCookie ? csrfCookie.split('=')[1] : '';
-      
-      console.log("CSRF Token:", csrfToken);
-      
-      // Make the request with credentials and CSRF token
-      const response = await fetch(`${BACKEND_URL}/api/auth/become-host/`, {
+      // Simple POST request with credentials
+      const response = await fetch("/api/auth/become-host/", {
         method: "POST",
         credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken": csrfToken,
-        },
       });
 
       console.log("Response status:", response.status);
       
-      // Try to parse the response as text first to see what we're getting
-      const responseText = await response.text();
-      console.log("Response text:", responseText);
-      
-      // If not OK, throw an error
       if (!response.ok) {
-        let errorMessage = "Failed to become a host";
-        try {
-          const errorData = JSON.parse(responseText);
-          errorMessage = errorData.error || errorMessage;
-        } catch (e) {
-          console.error("Error parsing error response:", e);
-        }
-        throw new Error(errorMessage);
+        throw new Error("Failed to become a host");
       }
 
-      // Parse the response as JSON
-      let data;
-      try {
-        data = JSON.parse(responseText);
-        console.log("Success response:", data);
-      } catch (e) {
-        console.error("Error parsing success response:", e);
-        throw new Error("Invalid response from server");
-      }
+      const data = await response.json();
+      console.log("Success response:", data);
       
       // Refresh the user data to update the UI
-      if (typeof checkAuth === 'function') {
-        console.log("Refreshing user data...");
-        await checkAuth();
-        console.log("User data refreshed");
-      } else {
-        console.warn("checkAuth is not a function, cannot refresh user data");
-        // Force a page reload as fallback
-        window.location.reload();
-      }
+      await checkAuth();
 
       toast({
         title: "Success!",
@@ -110,7 +63,7 @@ export function BecomeHostButton({
       console.error("Error becoming a host:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to become a host. Please try again.",
+        description: "Failed to become a host. Please try again.",
         variant: "destructive",
       });
     } finally {
