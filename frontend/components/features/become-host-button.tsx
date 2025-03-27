@@ -34,57 +34,53 @@ export function BecomeHostButton({
     try {
       console.log("Sending become host request...")
       
-      // First, ensure we have a valid CSRF token
-      await fetch("/api/auth/csrf", {
-        method: "GET",
-        credentials: "include",
-      });
-      
-      const response = await fetch("/api/auth/become-host", {
+      // Make direct request to the backend
+      const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+      const response = await fetch(`${BACKEND_URL}/api/auth/become-host/`, {
         method: "POST",
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
           "X-Requested-With": "XMLHttpRequest"
         }
-      })
+      });
 
-      console.log("Response status:", response.status)
+      console.log("Response status:", response.status);
       
       if (!response.ok) {
-        const errorData = await response.json()
-        console.error("Error response:", errorData)
-        throw new Error(errorData.error || "Failed to become a host")
+        const errorData = await response.json();
+        console.error("Error response:", errorData);
+        throw new Error(errorData.error || "Failed to become a host");
       }
 
-      const data = await response.json()
-      console.log("Success response:", data)
+      const data = await response.json();
+      console.log("Success response:", data);
       
       // Refresh the user data to update the UI
       if (typeof refreshUser === 'function') {
-        await refreshUser()
+        await refreshUser();
       } else {
-        console.warn("refreshUser is not a function, cannot refresh user data")
+        console.warn("refreshUser is not a function, cannot refresh user data");
         // Force a page reload as fallback
-        window.location.reload()
+        window.location.reload();
       }
 
       toast({
         title: "Success!",
         description: "You are now a host and can list driveways.",
-      })
+      });
 
       // Redirect to the list driveway page
-      router.push("/dashboard/list-driveway")
+      router.push("/dashboard/list-driveway");
     } catch (error) {
-      console.error("Error becoming a host:", error)
+      console.error("Error becoming a host:", error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to become a host. Please try again.",
         variant: "destructive",
-      })
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
 
