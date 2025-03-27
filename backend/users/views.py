@@ -272,12 +272,11 @@ class UserProfileView(APIView):
 
 
 
-@method_decorator(csrf_exempt, name='dispatch')
 class BecomeHostView(APIView):
     """
     API endpoint that allows users to become hosts by setting can_list_driveway to True.
     """
-    permission_classes = [AllowAny]  # Temporarily allow any user for testing
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
         # Log detailed information for debugging

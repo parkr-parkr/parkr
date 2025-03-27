@@ -37,10 +37,27 @@ export function BecomeHostButton({
       // Make direct request to the backend
       const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
       
-      // Make the request with credentials to include cookies
+      // First get a CSRF token
+      const csrfResponse = await fetch(`${BACKEND_URL}/api/auth/login/`, {
+        method: "GET",
+        credentials: "include",
+      });
+      
+      // Extract the CSRF token from cookies
+      const cookies = document.cookie.split(';');
+      const csrfCookie = cookies.find(cookie => cookie.trim().startsWith('csrftoken='));
+      const csrfToken = csrfCookie ? csrfCookie.split('=')[1] : '';
+      
+      console.log("CSRF Token:", csrfToken);
+      
+      // Make the request with credentials and CSRF token
       const response = await fetch(`${BACKEND_URL}/api/auth/become-host/`, {
         method: "POST",
         credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": csrfToken,
+        },
       });
 
       console.log("Response status:", response.status);
