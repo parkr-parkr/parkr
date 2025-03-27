@@ -272,14 +272,11 @@ class UserProfileView(APIView):
 
 
 
-# Keep CSRF exempt for now to debug the issue
-@method_decorator(csrf_exempt, name='dispatch')
 class BecomeHostView(APIView):
     """
     API endpoint that allows users to become hosts by setting can_list_driveway to True.
     """
-    # Use AllowAny temporarily to debug authentication issues
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
         logger.info("BecomeHostView: Request received")

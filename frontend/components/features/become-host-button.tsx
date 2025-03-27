@@ -34,15 +34,12 @@ export function BecomeHostButton({
     try {
       console.log("Sending become host request...");
       
-      // Use the correct URL path - the issue was using /api/auth/ instead of /api/auth/
-      const BACKEND_URL = "http://localhost:8000";
-      const response = await fetch(`${BACKEND_URL}/api/auth/become-host/`, {
+      // Use credentials: 'include' which is critical for sending cookies
+      const response = await fetch("http://localhost:8000/api/auth/become-host/", {
         method: "POST",
-        mode: "cors",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
-          Accept: "application/json",
-          Origin: window.location.origin,
         },
       });
 
