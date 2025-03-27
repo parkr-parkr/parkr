@@ -269,3 +269,23 @@ class UserProfileView(APIView):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class BecomeHostView(APIView):
+    """
+    API endpoint that allows users to become hosts by setting can_list_driveway to True.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        user.can_list_driveway = True
+        user.save()
+        
+        logger.info("User %s became a host", user.email)
+        
+        serializer = UserProfileSerializer(user)
+        return Response({
+            "message": "You are now a host and can list driveways",
+            "user": serializer.data
+        }, status=status.HTTP_200_OK)
