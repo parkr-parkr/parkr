@@ -278,6 +278,13 @@ class BecomeHostView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        # Log detailed information for debugging
+        logger.info("BecomeHostView: Request received")
+        logger.info("BecomeHostView: User authenticated: %s", request.user.is_authenticated)
+        logger.info("BecomeHostView: User: %s", request.user)
+        logger.info("BecomeHostView: Session key: %s", request.session.session_key)
+        logger.info("BecomeHostView: Headers: %s", request.headers)
+        
         user = request.user
         user.can_list_driveway = True
         user.save()

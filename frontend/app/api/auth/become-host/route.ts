@@ -12,7 +12,8 @@ export async function POST(request: Request) {
       credentials: "include",
       headers: {
         'Cookie': cookies,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest'  // This helps Django identify AJAX requests
       }
     })
 

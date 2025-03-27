@@ -33,11 +33,19 @@ export function BecomeHostButton({
     setIsLoading(true)
     try {
       console.log("Sending become host request...")
+      
+      // First, ensure we have a valid CSRF token
+      await fetch("/api/auth/csrf", {
+        method: "GET",
+        credentials: "include",
+      });
+      
       const response = await fetch("/api/auth/become-host", {
         method: "POST",
         credentials: "include",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "X-Requested-With": "XMLHttpRequest"
         }
       })
 
