@@ -4,7 +4,7 @@ export async function POST() {
     console.log("API route: User becoming a host...")
 
     // Forward the request to Django
-    const response = await fetch(`${BACKEND_URL}/api/auth/become-host/`, {
+    const response = await fetch(`${BACKEND_URL}/api/users/become-host/`, {
       method: "POST",
       credentials: "include",
     })
