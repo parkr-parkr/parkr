@@ -32,19 +32,34 @@ export function BecomeHostButton({
 
     setIsLoading(true)
     try {
+      console.log("Sending become host request...")
       const response = await fetch("/api/auth/become-host", {
         method: "POST",
         credentials: "include",
+        headers: {
+          "Content-Type": "application/json"
+        }
       })
 
+      console.log("Response status:", response.status)
+      
       if (!response.ok) {
-        throw new Error("Failed to become a host")
+        const errorData = await response.json()
+        console.error("Error response:", errorData)
+        throw new Error(errorData.error || "Failed to become a host")
       }
 
       const data = await response.json()
+      console.log("Success response:", data)
       
       // Refresh the user data to update the UI
-      await refreshUser()
+      if (typeof refreshUser === 'function') {
+        await refreshUser()
+      } else {
+        console.warn("refreshUser is not a function, cannot refresh user data")
+        // Force a page reload as fallback
+        window.location.reload()
+      }
 
       toast({
         title: "Success!",
@@ -57,7 +72,7 @@ export function BecomeHostButton({
       console.error("Error becoming a host:", error)
       toast({
         title: "Error",
-        description: "Failed to become a host. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to become a host. Please try again.",
         variant: "destructive",
       })
     } finally {
