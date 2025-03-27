@@ -32,10 +32,21 @@ export function BecomeHostButton({
 
     setIsLoading(true)
     try {
-      console.log("Sending become host request...")
+      console.log("Sending become host request...");
+      console.log("Current user:", user);
       
       // Make direct request to the backend
       const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+      console.log("Using backend URL:", BACKEND_URL);
+      
+      // First, try to get a CSRF token
+      const csrfResponse = await fetch(`${BACKEND_URL}/api/auth/login/`, {
+        method: "GET",
+        credentials: "include",
+      });
+      console.log("CSRF response status:", csrfResponse.status);
+      
+      // Now make the actual request
       const response = await fetch(`${BACKEND_URL}/api/auth/become-host/`, {
         method: "POST",
         credentials: "include",
@@ -46,19 +57,39 @@ export function BecomeHostButton({
       });
 
       console.log("Response status:", response.status);
+      console.log("Response headers:", Object.fromEntries([...response.headers.entries()]));
       
+      // Try to parse the response as text first to see what we're getting
+      const responseText = await response.text();
+      console.log("Response text:", responseText);
+      
+      // If not OK, throw an error
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Error response:", errorData);
-        throw new Error(errorData.error || "Failed to become a host");
+        let errorMessage = "Failed to become a host";
+        try {
+          const errorData = JSON.parse(responseText);
+          errorMessage = errorData.error || errorMessage;
+        } catch (e) {
+          console.error("Error parsing error response:", e);
+        }
+        throw new Error(errorMessage);
       }
 
-      const data = await response.json();
-      console.log("Success response:", data);
+      // Parse the response as JSON
+      let data;
+      try {
+        data = JSON.parse(responseText);
+        console.log("Success response:", data);
+      } catch (e) {
+        console.error("Error parsing success response:", e);
+        throw new Error("Invalid response from server");
+      }
       
       // Refresh the user data to update the UI
       if (typeof refreshUser === 'function') {
+        console.log("Refreshing user data...");
         await refreshUser();
+        console.log("User data refreshed:", user);
       } else {
         console.warn("refreshUser is not a function, cannot refresh user data");
         // Force a page reload as fallback

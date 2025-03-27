@@ -285,14 +285,28 @@ class BecomeHostView(APIView):
         logger.info("BecomeHostView: Session key: %s", request.session.session_key)
         logger.info("BecomeHostView: Headers: %s", request.headers)
         
-        user = request.user
-        user.can_list_driveway = True
-        user.save()
-        
-        logger.info("User %s became a host", user.email)
-        
-        serializer = UserProfileSerializer(user)
-        return Response({
-            "message": "You are now a host and can list driveways",
-            "user": serializer.data
-        }, status=status.HTTP_200_OK)
+        try:
+            user = request.user
+            logger.info("BecomeHostView: Current can_list_driveway value: %s", user.can_list_driveway)
+            
+            user.can_list_driveway = True
+            user.save()
+            
+            # Verify the change was saved
+            user.refresh_from_db()
+            logger.info("BecomeHostView: Updated can_list_driveway value: %s", user.can_list_driveway)
+            
+            logger.info("User %s became a host", user.email)
+            
+            serializer = UserProfileSerializer(user)
+            logger.info("BecomeHostView: Serialized user data: %s", serializer.data)
+            
+            return Response({
+                "message": "You are now a host and can list driveways",
+                "user": serializer.data
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            logger.error("BecomeHostView: Error occurred: %s", str(e), exc_info=True)
+            return Response({
+                "error": "An error occurred while processing your request"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
