@@ -272,24 +272,39 @@ class UserProfileView(APIView):
 
 
 
+# Keep CSRF exempt for now to debug the issue
 @method_decorator(csrf_exempt, name='dispatch')
 class BecomeHostView(APIView):
     """
     API endpoint that allows users to become hosts by setting can_list_driveway to True.
     """
-    permission_classes = [IsAuthenticated]
+    # Use AllowAny temporarily to debug authentication issues
+    permission_classes = [AllowAny]
 
     def post(self, request):
         logger.info("BecomeHostView: Request received")
+        logger.info(f"BecomeHostView: Headers: {dict(request.headers)}")
+        logger.info(f"BecomeHostView: Cookies: {request.COOKIES}")
+        
+        # Check if user is authenticated
+        if not request.user.is_authenticated:
+            logger.warning("BecomeHostView: User is not authenticated")
+            return Response({
+                "error": "Authentication required"
+            }, status=status.HTTP_401_UNAUTHORIZED)
         
         try:
-            # Simply use the authenticated user from the request
+            # Get the user from the request
             user = request.user
             logger.info(f"BecomeHostView: User {user.email}")
             
             # Update the user's can_list_driveway attribute
             user.can_list_driveway = True
             user.save()
+            
+            # Verify the change was saved
+            user.refresh_from_db()
+            logger.info(f"BecomeHostView: Updated can_list_driveway value: {user.can_list_driveway}")
             
             logger.info(f"User {user.email} became a host")
             

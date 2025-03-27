@@ -34,10 +34,14 @@ export function BecomeHostButton({
     try {
       console.log("Sending become host request...");
       
-      // Simple POST request with credentials
-      const response = await fetch("/api/auth/become-host/", {
+      // Use the correct URL path - the issue was using /api/auth/ instead of /api/auth/
+      const BACKEND_URL = "http://localhost:8000";
+      const response = await fetch(`${BACKEND_URL}/api/auth/become-host/`, {
         method: "POST",
         credentials: "include",
+        headers: {
+          "Content-Type": "application/json"
+        }
       });
 
       console.log("Response status:", response.status);
