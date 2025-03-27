@@ -33,42 +33,17 @@ export function BecomeHostButton({
     setIsLoading(true)
     try {
       console.log("Sending become host request...");
-      console.log("Current user:", user);
       
       // Make direct request to the backend
       const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
-      console.log("Using backend URL:", BACKEND_URL);
       
-      // First, ensure we're logged in by checking profile
-      const profileResponse = await fetch(`${BACKEND_URL}/api/auth/profile/`, {
-        method: "GET",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Requested-With": "XMLHttpRequest"
-        }
-      });
-      
-      console.log("Profile response status:", profileResponse.status);
-      
-      if (!profileResponse.ok) {
-        console.error("Not authenticated, redirecting to login");
-        router.push("/login?redirect=/dashboard");
-        return;
-      }
-      
-      // Now make the actual request
+      // Make the request with credentials to include cookies
       const response = await fetch(`${BACKEND_URL}/api/auth/become-host/`, {
         method: "POST",
         credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Requested-With": "XMLHttpRequest"
-        }
       });
 
       console.log("Response status:", response.status);
-      console.log("Response headers:", Object.fromEntries([...response.headers.entries()]));
       
       // Try to parse the response as text first to see what we're getting
       const responseText = await response.text();
