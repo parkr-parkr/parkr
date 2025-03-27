@@ -12,7 +12,6 @@ import { LocationSearch } from "@/components/features/location-search"
 import { PreventTextEditing } from "./page-fix"
 import { useAuth } from "@/components/providers/auth-provider"
 import { ListDrivewayButton } from "@/components/features/list-driveway-button"
-import { BecomeHostButton } from "@/components/features/become-host-button"
 import type { DateRange } from "react-day-picker"
 
 export default function Home() {
@@ -82,7 +81,7 @@ export default function Home() {
           <nav className="hidden md:flex items-center gap-6">
             {/* Replace the Link with ListDrivewayButton */}
             <ListDrivewayButton variant="ghost" className="text-sm font-medium hover:underline underline-offset-4" />
-            <BecomeHostButton/>
+  
             <Link href="#" className="text-sm font-medium hover:underline underline-offset-4">
               How It Works
             </Link>

@@ -2,6 +2,18 @@
 
 import { createContext, useContext, useEffect, useState, useRef, type ReactNode } from "react"
 
+// Add this function at the top of your auth-provider.tsx file
+// to safely handle JSON parsing without using eval() or new Function()
+
+function safeJsonParse(text: string): any {
+  try {
+    return JSON.parse(text)
+  } catch (e) {
+    console.error("Error parsing JSON:", e)
+    return null
+  }
+}
+
 type User = {
   id: string
   email: string
@@ -10,6 +22,7 @@ type User = {
   last_name: string
   full_name: string
   is_verified: boolean
+  can_list_driveway: boolean
 }
 
 type AuthContextType = {
@@ -34,13 +47,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const authCheckInProgress = useRef(false)
   const lastAuthCheck = useRef<number>(0)
   const AUTH_CHECK_THROTTLE = 5000 // 5 seconds
-  // Add a new state for backend status
   const [isBackendAvailable, setIsBackendAvailable] = useState<boolean | null>(null)
 
-  // Simplified check session function that doesn't require a backend endpoint
+  // Check backend availability
+  const checkBackendStatus = async () => {
+    try {
+      console.log("Checking backend availability...")
+      const response = await fetch(`${BACKEND_URL}/api/auth/login/`, {
+        method: "OPTIONS",
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Request-Method": "POST",
+          "Access-Control-Request-Headers": "content-type",
+          Origin: window.location.origin,
+        },
+      })
+
+      const isAvailable = response.ok || response.status === 200 || response.status === 204
+      console.log("Backend availability check result:", isAvailable, "Status:", response.status)
+      setIsBackendAvailable(isAvailable)
+      return isAvailable
+    } catch (error) {
+      console.error("Backend availability check failed:", error)
+      setIsBackendAvailable(false)
+      return false
+    }
+  }
+
+  // Simplified check session function
   const checkSession = async () => {
     try {
-      // Just log the cookies for debugging
       console.log("Current cookies:", document.cookie)
       return { cookies: document.cookie }
     } catch (error) {
@@ -57,7 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return
     }
 
-    // Throttle auth checks to prevent too many requests
+    // Throttle auth checks
     const now = Date.now()
     if (now - lastAuthCheck.current < AUTH_CHECK_THROTTLE) {
       console.log("Auth check throttled, skipping")
@@ -71,85 +107,79 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       console.log("Checking authentication status...")
 
-      // First try the direct backend URL
-      let userData = null
+      // Only use direct backend URL - no fallback
+      console.log("Trying direct backend URL:", `${BACKEND_URL}/api/auth/profile/`)
+      const response = await fetch(`${BACKEND_URL}/api/auth/profile/`, {
+        credentials: "include",
+      })
 
-      try {
-        const response = await fetch(`${BACKEND_URL}/api/auth/login/`, {
-          method: "GET",
-          credentials: "include",
-        })
-
-        if (response.ok) {
-          const data = await response.json()
-          userData = data.user
-          console.log("User data from session:", userData)
-          setUser(userData)
-        } else {
-          console.log("No user data found in session")
-          setUser(null)
-        }
-      } catch (error) {
-        console.error("Error fetching user data from session:", error)
+      if (response.ok) {
+        const userData = await response.json()
+        console.log("Auth check successful:", userData)
+        setUser(userData)
+        return userData
+      } else {
+        console.log("Auth check failed with status:", response.status)
         setUser(null)
+        return null
       }
-
-      // Update user state based on the results
+    } catch (error) {
+      console.error("Auth check failed:", error)
+      setUser(null)
+      return null
     } finally {
       setIsLoading(false)
       authCheckInProgress.current = false
     }
   }
 
-  // Login function
+  // Login function - direct calls only
   const login = async (email: string, password: string) => {
     console.log("Login function called with email:", email)
+
+    // Check if backend is available
+    const isAvailable = await checkBackendStatus()
+    if (!isAvailable) {
+      return {
+        success: false,
+        error: "Backend server is not available. Please make sure the Django server is running.",
+      }
+    }
 
     try {
       setIsLoading(true)
 
-      // Try direct backend first
-      let loginSuccess = false
-      let userData = null
-      let errorMessage = null
+      // Direct backend call only - no fallback
+      const apiUrl = `${BACKEND_URL}/api/auth/login/`
+      console.log("Logging in to:", apiUrl)
 
-      try {
-        console.log("Trying login through Next.js API route")
-        const nextResponse = await fetch(`${BACKEND_URL}/api/auth/login/`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ email, password }),  
-          credentials: 'include',
-        })
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({ email, password }),
+      })
 
-        console.log("Next.js API route login response status:", nextResponse.status)
+      console.log("Login response status:", response.status)
+      console.log("Cookies after login attempt:", document.cookie)
 
-        if (nextResponse.ok) {
-          const data = await nextResponse.json()
-          userData = data.user
-          loginSuccess = true
-          console.log("Next.js API route login successful:", userData)
+      if (response.ok) {
+        const text = await response.text()
+        const data = safeJsonParse(text)
+        if (data) {
+          setUser(data.user)
+          return { success: true }
         } else {
-          const errorData = await nextResponse.json().catch(() => ({ error: "Invalid response from server" }))
-          errorMessage = errorData.error || "Login failed"
-          console.error("Next.js API route login failed:", errorMessage)
+          return { success: false, error: "Failed to parse user data." }
         }
-      } catch (nextError) {
-        console.error("Next.js API route login error:", nextError)
-        errorMessage =
-          errorMessage || `Network error: ${nextError instanceof Error ? nextError.message : String(nextError)}`
-      }
-
-      // Update user state based on login result
-      if (loginSuccess && userData) {
-        setUser(userData)
-        return { success: true }
       } else {
+        const errorText = await response.text()
+        const errorData = safeJsonParse(errorText) || { error: "Invalid response from server" }
         return {
           success: false,
-          error: errorMessage || "Login failed. Please try again.",
+          error: errorData.error || "Login failed. Please try again.",
         }
       }
     } catch (error) {
@@ -163,91 +193,77 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // Logout function
+  // Logout function - direct calls only
   const logout = async () => {
     try {
       console.log("Logging out user...")
       console.log("Cookies before logout:", document.cookie)
-      setIsLoading(true)
-      try {
-        // Use direct backend URL with trailing slash
-        console.log("Trying direct logout")
-        const response = await fetch(`${BACKEND_URL}/api/auth/logout/`, {
-          method: "POST",
-          credentials: "include", // Important for sending cookies
-          headers: {
-            "Content-Type": "application/json",
-          },
-        })
 
-        console.log("Logout response status:", response.status)
-      } catch (directError) {
-        console.error("Direct logout error:", directError)
-      } 
-      // Manually clear all possible cookies with different paths and domains
+      // Direct backend call only - no fallback
+      console.log("Logging out via direct backend URL")
+      const response = await fetch(`${BACKEND_URL}/api/auth/logout/`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+
+      console.log("Logout response status:", response.status)
+
+      // Manually clear cookies
       console.log("Manually clearing cookies...")
-
-      // Get all cookies
       const cookies = document.cookie.split(";")
-      console.log("Cookies to clear:", cookies)
 
-      // Clear each cookie with various path combinations
       cookies.forEach((cookie) => {
         const [name] = cookie.trim().split("=")
         if (name) {
           const trimmedName = name.trim()
-          // Clear with path=/
           document.cookie = `${trimmedName}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/;`
-          // Clear with no path (defaults to current path)
           document.cookie = `${trimmedName}=; expires=Thu, 01 Jan 1970 00:00:00 GMT;`
-          // Clear with path=/api
           document.cookie = `${trimmedName}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/api;`
-
           console.log(`Cleared cookie: ${trimmedName}`)
         }
       })
 
-      // Log cookies after clearing
       console.log("Cookies after clearing:", document.cookie)
 
-      // Always clear the user state
+      // Clear user state
       setUser(null)
 
-      // Add a small delay before redirecting to ensure cookies are processed
+      // Redirect after a short delay
       console.log("Preparing to redirect...")
       setTimeout(() => {
         console.log("Redirecting to home page...")
-        // Navigate to home page without full refresh
-        window.location.href = "/"
+        window.location.replace("/")
       }, 100)
 
       return true
     } catch (error) {
       console.error("Logout error:", error)
-      // Still clear the user state
       setUser(null)
 
-      // Navigate to home page without full refresh as a last resort
-      console.log("Error during logout, navigating to home page...")
+      // Force reload as fallback
       setTimeout(() => {
-        window.location.href = "/"
+        window.location.replace("/")
       }, 100)
-    } finally {
-      setIsLoading(false)
     }
   }
 
-  // Update the useEffect to check backend status first
+  // Initialize auth on component mount
   useEffect(() => {
     const initAuth = async () => {
-      checkAuth()
+      const isAvailable = await checkBackendStatus()
+      if (isAvailable) {
+        checkAuth()
+      } else {
+        setIsLoading(false)
+      }
     }
 
     initAuth()
-
   }, [])
 
-  // Update the AuthContext.Provider to include isBackendAvailable
   return (
     <AuthContext.Provider
       value={{
@@ -257,6 +273,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logout,
         checkAuth,
         isBackendAvailable,
+        checkBackendStatus,
         checkSession,
       }}
     >

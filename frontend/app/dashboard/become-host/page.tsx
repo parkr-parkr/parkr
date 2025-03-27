@@ -1,450 +1,5 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { CarFront, ArrowLeft, CheckCircle, AlertCircle } from "lucide-react"
-import Link from "next/link"
-import { Button } from "@/components/shadcn/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/shadcn/card"
-import { useAuth } from "@/components/providers/auth-provider"
-import { PreventTextEditing } from "../../page-fix"
-
-export default function BecomeHostPage() {
-  const router = useRouter()
-  const { user, checkAuth } = useAuth()
-  const [isLoading, setIsLoading] = useState(false)
-  const [status, setStatus] = useState<"idle" | "success" | "error">("idle")
-  const [message, setMessage] = useState("")
-  const [debugInfo, setDebugInfo] = useState<string | null>(null)
-  const [hasPermission, setHasPermission] = useState(false)
-  const [permissionCheckCount, setPermissionCheckCount] = useState(0)
-  const [csrfToken, setCsrfToken] = useState<string | null>(null)
-
-  // Check if user already has permission when the component loads
-  useEffect(() => {
-    if (user) {
-      checkUserPermission()
-      fetchCsrfToken()
-    }
-  }, [user, permissionCheckCount])
-
-  // Function to fetch CSRF token
-  const fetchCsrfToken = async () => {
-    try {
-      // Get CSRF token from the cookie
-      const cookies = document.cookie.split(";")
-      const csrfCookie = cookies.find((cookie) => cookie.trim().startsWith("csrftoken="))
-      if (csrfCookie) {
-        const token = csrfCookie.split("=")[1]
-        setCsrfToken(token)
-        console.log("Found CSRF token in cookies:", token)
-      } else {
-        // If no token in cookies, try to get one from the server
-        console.log("No CSRF token found in cookies, fetching from server...")
-        const response = await fetch("http://localhost:8000/api/auth/csrf/", {
-          credentials: "include",
-        })
-
-        if (response.ok) {
-          // Check cookies again after the request
-          const cookies = document.cookie.split(";")
-          const csrfCookie = cookies.find((cookie) => cookie.trim().startsWith("csrftoken="))
-          if (csrfCookie) {
-            const token = csrfCookie.split("=")[1]
-            setCsrfToken(token)
-            console.log("Fetched CSRF token:", token)
-          }
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching CSRF token:", error)
-    }
-  }
-
-  // Function to check if the user has permission
-  const checkUserPermission = async () => {
-    try {
-      console.log("Checking user permission...")
-      const response = await fetch("http://localhost:8000/api/auth/permissions/", {
-        credentials: "include",
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        console.log("Permission check response:", data)
-
-        const hasListingPermission = data.can_list_driveway === true
-        console.log("Has listing permission:", hasListingPermission)
-
-        setHasPermission(hasListingPermission)
-
-        if (hasListingPermission) {
-          setStatus("success")
-          setMessage("You have permission to list driveways!")
-          return true
-        }
-        return false
-      } else {
-        console.error("Permission check failed with status:", response.status)
-        return false
-      }
-    } catch (error) {
-      console.error("Error checking permissions:", error)
-      return false
-    }
-  }
-
-  // Try the original endpoint with CSRF token
-  const handleRequestPermission = async () => {
-    if (!user) {
-      setStatus("error")
-      setMessage("You must be logged in to request permission")
-      return
-    }
-
-    setIsLoading(true)
-    setStatus("idle")
-    setMessage("")
-    setDebugInfo(null)
-
-    try {
-      console.log("Sending permission request...")
-
-      // Headers with CSRF token if available
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      }
-
-      if (csrfToken) {
-        headers["X-CSRFToken"] = csrfToken
-      }
-
-      // Use the original endpoint
-      const response = await fetch("http://localhost:8000/api/auth/grant_driveway_permission/", {
-        method: "POST",
-        headers,
-        credentials: "include",
-      })
-
-      console.log("Permission request response status:", response.status)
-
-      // Try to get the response data
-      let responseData
-      try {
-        responseData = await response.json()
-        console.log("Response data:", responseData)
-      } catch (e) {
-        console.error("Failed to parse response as JSON:", e)
-        const text = await response.text()
-        console.log("Response text:", text)
-        responseData = { error: "Failed to parse response" }
-      }
-
-      if (response.ok) {
-        // Set success state
-        setStatus("success")
-        setMessage(responseData.message || "Permission granted successfully!")
-
-        // Wait a moment before refreshing auth
-        await new Promise((resolve) => setTimeout(resolve, 500))
-
-        // Refresh auth to get updated permissions
-        await checkAuth()
-
-        // Trigger a permission check
-        setPermissionCheckCount((prev) => prev + 1)
-      } else {
-        // Handle error
-        setStatus("error")
-        setMessage(responseData.error || `Failed with status: ${response.status}`)
-        setDebugInfo(
-          JSON.stringify(
-            {
-              status: response.status,
-              data: responseData,
-            },
-            null,
-            2,
-          ),
-        )
-      }
-    } catch (error) {
-      console.error("Error requesting permission:", error)
-      setStatus("error")
-      setMessage(`Network error: ${error instanceof Error ? error.message : String(error)}`)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  // Try the places API endpoint as an alternative
-  const handleRequestViaPlacesAPI = async () => {
-    if (!user) {
-      setStatus("error")
-      setMessage("You must be logged in to request permission")
-      return
-    }
-
-    setIsLoading(true)
-    setStatus("idle")
-    setMessage("")
-    setDebugInfo(null)
-
-    try {
-      console.log("Sending permission request via places API...")
-
-      // Headers with CSRF token if available
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      }
-
-      if (csrfToken) {
-        headers["X-CSRFToken"] = csrfToken
-      }
-
-      // Use the places API endpoint
-      const response = await fetch("http://localhost:8000/api/places/request_listing_permission/", {
-        method: "POST",
-        headers,
-        credentials: "include",
-      })
-
-      console.log("Permission request response status:", response.status)
-
-      // Try to get the response data
-      let responseData
-      try {
-        responseData = await response.json()
-        console.log("Response data:", responseData)
-      } catch (e) {
-        console.error("Failed to parse response as JSON:", e)
-        const text = await response.text()
-        console.log("Response text:", text)
-        responseData = { error: "Failed to parse response" }
-      }
-
-      if (response.ok) {
-        // Set success state
-        setStatus("success")
-        setMessage(responseData.message || "Permission granted successfully!")
-
-        // Wait a moment before refreshing auth
-        await new Promise((resolve) => setTimeout(resolve, 500))
-
-        // Refresh auth to get updated permissions
-        await checkAuth()
-
-        // Trigger a permission check
-        setPermissionCheckCount((prev) => prev + 1)
-      } else {
-        // Handle error
-        setStatus("error")
-        setMessage(responseData.error || `Failed with status: ${response.status}`)
-        setDebugInfo(
-          JSON.stringify(
-            {
-              status: response.status,
-              data: responseData,
-            },
-            null,
-            2,
-          ),
-        )
-      }
-    } catch (error) {
-      console.error("Error requesting permission:", error)
-      setStatus("error")
-      setMessage(`Network error: ${error instanceof Error ? error.message : String(error)}`)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  // Use the Django management command directly
-  const handleManualPermissionGrant = async () => {
-    if (!user) {
-      setStatus("error")
-      setMessage("You must be logged in to request permission")
-      return
-    }
-
-    setIsLoading(true)
-    setStatus("idle")
-    setMessage("")
-    setDebugInfo(null)
-
-    try {
-      // Show instructions for manual permission grant
-      setStatus("success")
-      setMessage("For development, run this command in your Django project:")
-      setDebugInfo(`python backend/manage.py grant_driveway_permission ${user.email}`)
-
-      // Set local permission state to true for development
-      setHasPermission(true)
-    } catch (error) {
-      console.error("Error:", error)
-      setStatus("error")
-      setMessage(`Error: ${error instanceof Error ? error.message : String(error)}`)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const handleContinueToListing = () => {
-    router.push("/profile/list-driveway")
-  }
-
-  // For development: This function will directly set the permission in local state
-  // without making any API calls - useful if the backend is not working
-  const handleForcePermission = () => {
-    setStatus("success")
-    setMessage("Permission forced in local state (frontend only)")
-    setHasPermission(true)
-  }
-
-  return (
-    <div className="flex min-h-screen flex-col">
-      <PreventTextEditing />
-
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container max-w-6xl mx-auto flex h-16 items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Link href="/" className="flex items-center gap-2">
-              <CarFront className="h-6 w-6 text-primary" />
-              <span className="text-xl font-bold">ParkShare</span>
-            </Link>
-          </div>
-          <Link
-            href="/profile"
-            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Dashboard
-          </Link>
-        </div>
-      </header>
-
-      <main className="flex-1 container max-w-6xl mx-auto py-12 px-4">
-        <div className="max-w-2xl mx-auto">
-          <h1 className="text-3xl font-bold mb-6">Become a Host</h1>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>List Your Driveway</CardTitle>
-              <CardDescription>Share your unused parking space and earn extra income</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p>
-                Before you can list your driveway, we need to verify your account. This helps ensure the safety and
-                quality of our platform.
-              </p>
-
-              <div className="bg-blue-50 text-blue-700 p-4 rounded-md">
-                <p className="font-medium">Permission Status</p>
-                <p>Current permission status: {hasPermission ? "Granted" : "Not granted"}</p>
-                <Button
-                  variant="link"
-                  className="p-0 h-auto text-blue-700"
-                  onClick={() => setPermissionCheckCount((prev) => prev + 1)}
-                >
-                  Refresh Status
-                </Button>
-              </div>
-
-              {status === "success" && (
-                <div className="bg-green-50 text-green-700 p-4 rounded-md flex items-start gap-3">
-                  <CheckCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium">Permission Granted!</p>
-                    <p>{message}</p>
-                    {debugInfo && (
-                      <pre className="mt-2 p-2 bg-green-100 rounded text-xs overflow-x-auto">{debugInfo}</pre>
-                    )}
-                    {!debugInfo && <p className="mt-2">You can now list your driveway for rent.</p>}
-                  </div>
-                </div>
-              )}
-
-              {status === "error" && (
-                <div className="bg-red-50 text-red-700 p-4 rounded-md flex items-start gap-3">
-                  <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium">Error</p>
-                    <p>{message}</p>
-                    {debugInfo && (
-                      <details className="mt-2 text-xs">
-                        <summary>Technical Details</summary>
-                        <pre className="mt-1 p-2 bg-red-100 rounded overflow-x-auto">{debugInfo}</pre>
-                      </details>
-                    )}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-            <CardFooter className="flex flex-col gap-3">
-              {!hasPermission ? (
-                <>
-                  <Button
-                    onClick={handleRequestPermission}
-                    disabled={isLoading || status === "success"}
-                    className="w-full"
-                  >
-                    {isLoading ? "Processing..." : "Request Host Permission"}
-                  </Button>
-                  <Button
-                    onClick={handleRequestViaPlacesAPI}
-                    variant="outline"
-                    disabled={isLoading || status === "success"}
-                    className="w-full"
-                  >
-                    {isLoading ? "Processing..." : "Try Alternative Method"}
-                  </Button>
-                  <Button
-                    onClick={handleManualPermissionGrant}
-                    variant="outline"
-                    disabled={isLoading || status === "success"}
-                    className="w-full"
-                  >
-                    Manual Permission Grant
-                  </Button>
-                </>
-              ) : (
-                <Button onClick={handleContinueToListing} className="w-full">
-                  Continue to Listing Form
-                </Button>
-              )}
-
-              {/* Development mode buttons - remove in production */}
-              <div className="w-full pt-2 border-t">
-                <p className="text-xs text-muted-foreground mb-2 text-center">Development Options</p>
-                <Button
-                  onClick={handleForcePermission}
-                  variant="outline"
-                  size="sm"
-                  disabled={isLoading || hasPermission}
-                  className="w-full"
-                >
-                  Force Permission (UI Only)
-                </Button>
-              </div>
-            </CardFooter>
-          </Card>
-        </div>
-      </main>
-
-      <footer className="border-t py-6">
-        <div className="container max-w-6xl mx-auto px-4">
-          <p className="text-center text-sm text-muted-foreground">
-            © {new Date().getFullYear()} ParkShare, Inc. All rights reserved.
-          </p>
-        </div>
-      </footer>
-    </div>
-  )
-}
-
-"use client"
-
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -453,15 +8,18 @@ import { Button } from "@/components/shadcn/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/shadcn/card"
 import { useAuth } from "@/components/providers/auth-provider"
 import { useToast } from "@/components/shadcn/toast-context"
-import { PreventTextEditing } from "@/app/page-fix"
+
+// Add this import at the top of your file
+import { getCookie } from "@/lib/csrf"
 
 export default function BecomeHostPage() {
-  const router = useRouter()
   const { user } = useAuth()
-  const { toast } = useToast()
+  const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
+  const { toast } = useToast()
 
+  // Replace only the handleBecomeHost function with this updated version
   const handleBecomeHost = async () => {
     if (!user) {
       router.push("/login?redirect=/dashboard/become-host")
@@ -471,11 +29,29 @@ export default function BecomeHostPage() {
     setIsLoading(true)
 
     try {
-      // Make the request to the Django backend to grant permission
-      const response = await fetch("http://localhost:8000/api/auth/grant_driveway_permission/", {
+      // Get CSRF token from cookies
+      let csrfToken = getCookie("csrftoken")
+
+      // If no CSRF token exists, make a GET request to get one
+      if (!csrfToken) {
+        try {
+          await fetch("http://localhost:8000/api/auth/profile/", {
+            method: "GET",
+            credentials: "include",
+          })
+          csrfToken = getCookie("csrftoken")
+        } catch (error) {
+          console.error("Error fetching CSRF token:", error)
+        }
+      }
+
+      // Make the request to the Django backend with CSRF token
+      const response = await fetch("http://localhost:8000/api/auth/become-host/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "X-CSRFToken": csrfToken || "",
+          "X-Requested-With": "XMLHttpRequest",
         },
         credentials: "include",
       })
@@ -486,12 +62,40 @@ export default function BecomeHostPage() {
           title: "Success!",
           description: "You are now a host and can list your driveway.",
         })
-        
+
         // Redirect to the list-driveway page after a short delay
         setTimeout(() => {
           router.push("/dashboard/list-driveway")
         }, 1500)
       } else {
+        // Try fallback endpoint if the first one fails
+        try {
+          const fallbackResponse = await fetch("http://localhost:8000/api/places/request-listing-permission/", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-CSRFToken": csrfToken || "",
+              "X-Requested-With": "XMLHttpRequest",
+            },
+            credentials: "include",
+          })
+
+          if (fallbackResponse.ok) {
+            setIsSuccess(true)
+            toast({
+              title: "Success!",
+              description: "You are now a host and can list your driveway.",
+            })
+
+            setTimeout(() => {
+              router.push("/dashboard/list-driveway")
+            }, 1500)
+            return
+          }
+        } catch (fallbackError) {
+          console.error("Fallback request failed:", fallbackError)
+        }
+
         toast({
           title: "Error",
           description: "Failed to become a host. Please try again.",
@@ -511,76 +115,37 @@ export default function BecomeHostPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <PreventTextEditing />
-
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container max-w-6xl mx-auto flex h-16 items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Link href="/" className="flex items-center gap-2">
-              <CarFront className="h-6 w-6 text-primary" />
-              <span className="text-xl font-bold">ParkShare</span>
-            </Link>
-          </div>
-          <Link
-            href="/dashboard"
-            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Dashboard
-          </Link>
-        </div>
-      </header>
-
-      <main className="flex-1 container max-w-6xl mx-auto py-12 px-4">
-        <div className="max-w-md mx-auto">
-          <h1 className="text-3xl font-bold mb-2">Become a Host</h1>
-          <p className="text-muted-foreground mb-8">Start sharing your driveway and earn extra income</p>
-
-          <Card>
+      <div className="container relative h-[calc(100vh-80px)] md:h-[calc(100vh-120px)]">
+        <Link href="/dashboard" className="absolute left-0 top-0">
+          <Button variant="ghost">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back
+          </Button>
+        </Link>
+        <div className="flex h-full items-center justify-center">
+          <Card className="w-[400px]">
             <CardHeader>
-              <CardTitle>Ready to become a host?</CardTitle>
+              <CardTitle className="flex items-center">
+                <CarFront className="mr-2 h-4 w-4" /> Become a Host
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              {isSuccess ? (
-                <div className="flex flex-col items-center text-center py-6">
-                  <div className="rounded-full bg-green-100 p-3 mb-4">
-                    <CheckCircle className="h-8 w-8 text-green-600" />
-                  </div>
-                  <h3 className="text-lg font-medium mb-2">You're now a host!</h3>
-                  <p className="text-muted-foreground">
-                    You can now list your driveway and start earning. Redirecting to the listing page...
-                  </p>
-                </div>
-              ) : (
-                <p>
-                  By becoming a host, you'll be able to list your driveway on ParkShare and earn money by renting out
-                  your unused parking space.
-                </p>
-              )}
+              <p className="text-sm text-muted-foreground">
+                By becoming a host, you can list your driveway for others to rent.
+              </p>
             </CardContent>
-            <CardFooter>
-              {!isSuccess && (
-                <Button 
-                  className="w-full" 
-                  onClick={handleBecomeHost} 
-                  disabled={isLoading}
-                >
-                  {isLoading ? "Processing..." : "Become a Host"}
-                </Button>
-              )}
+            <CardFooter className="flex justify-between">
+              <Button variant="secondary" onClick={() => router.push("/dashboard")}>
+                Cancel
+              </Button>
+              <Button onClick={handleBecomeHost} disabled={isLoading}>
+                {isLoading ? "Loading..." : isSuccess ? <CheckCircle className="mr-2 h-4 w-4" /> : null}
+                {isSuccess ? "Success!" : "Become Host"}
+              </Button>
             </CardFooter>
           </Card>
         </div>
-      </main>
-
-      <footer className="border-t py-6">
-        <div className="container max-w-6xl mx-auto px-4">
-          <p className="text-center text-sm text-muted-foreground">
-            © {new Date().getFullYear()} ParkShare, Inc. All rights reserved.
-          </p>
-        </div>
-      </footer>
-    </div>
+      </div>
   )
 }
+

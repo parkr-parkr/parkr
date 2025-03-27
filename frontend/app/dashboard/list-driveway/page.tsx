@@ -2,27 +2,23 @@
 
 import type React from "react"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { CarFront, ArrowLeft, MapPin, DollarSign, Clock, ImagePlus } from "lucide-react"
+import { CarFront, ArrowLeft, MapPin, DollarSign, Clock, ImagePlus, ShieldAlert } from "lucide-react"
 import { Button } from "@/components/shadcn/button"
 import { Input } from "@/components/shadcn/input"
 import { Textarea } from "@/components/shadcn/textarea"
 import { Label } from "@/components/shadcn/label"
 import { useAuth } from "@/components/providers/auth-provider"
-import { PreventTextEditing } from "@/app/page-fix"
 import { useToast } from "@/components/shadcn/toast-context"
+import { getCookie } from "@/lib/csrf" // Import the CSRF utility
 
 export default function ListDrivewayPage() {
   const router = useRouter()
-  const { user, isLoading: authLoading } = useAuth()
+  const { user, isLoading: authLoading, checkAuth } = useAuth()
   const { toast } = useToast()
-  const [hasPermission, setHasPermission] = useState<boolean | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isCheckingPermission, setIsCheckingPermission] = useState(true)
-  const permissionCheckAttempts = useRef(0)
-  const maxPermissionCheckAttempts = 3
   const [formData, setFormData] = useState({
     name: "",
     address: "",
@@ -39,65 +35,16 @@ export default function ListDrivewayPage() {
     setFormData((prev) => ({ ...prev, [id]: value }))
   }
 
-  // Simplified permission check
-  useEffect(() => {
-    const checkPermission = async () => {
-      if (!user) return
-      
-      setIsCheckingPermission(true)
-      
-      try {
-        console.log("Checking driveway listing permission...")
-        const response = await fetch("http://localhost:8000/api/auth/permissions/", {
-          credentials: "include",
-        })
-
-        if (response.ok) {
-          try {
-            const data = await response.json()
-            console.log("Permission data:", data)
-            setHasPermission(data.can_list_driveway)
-          } catch (error) {
-            console.error("Error parsing permission response:", error)
-            // For development, set to true to make testing easier
-            if (process.env.NODE_ENV === "development") {
-              setHasPermission(true)
-            } else {
-              setHasPermission(false)
-            }
-          }
-        } else {
-          setHasPermission(false)
-        }
-      } catch (error) {
-        console.error("Error checking permissions:", error)
-        // For development, set to true to make testing easier
-        if (process.env.NODE_ENV === "development") {
-          setHasPermission(true)
-        } else {
-          setHasPermission(false)
-        }
-      } finally {
-        setIsCheckingPermission(false)
-      }
-    }
-
-    // Check permission when the component mounts
-    if (user) {
-      checkPermission()
-    }
-  }, [user])
-
-  // Redirect if not logged in - only check once
+  // Redirect if not logged in
   useEffect(() => {
     if (!authLoading && !user) {
       router.push("/login?redirect=/dashboard/list-driveway")
     }
   }, [user, authLoading, router])
 
-  // Redirect if no permission - only after checking is complete
+  // Redirect if no permission - directly check user.can_list_driveway
   useEffect(() => {
-    if (!isCheckingPermission && hasPermission === false) {
+    if (!authLoading && user && user.can_list_driveway === false) {
       toast({
         title: "Permission Required",
         description: "You need to become a host before listing a driveway.",
@@ -111,7 +58,7 @@ export default function ListDrivewayPage() {
 
       return () => clearTimeout(redirectTimer)
     }
-  }, [hasPermission, router, toast, isCheckingPermission])
+  }, [user, authLoading, router, toast])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -136,24 +83,63 @@ export default function ListDrivewayPage() {
         return
       }
 
-      // In a real app, you would submit the form data to your backend
+      // Get CSRF token
+      let csrfToken = getCookie("csrftoken")
+
+      // If no CSRF token exists, make a GET request to get one
+      if (!csrfToken) {
+        try {
+          await fetch("http://localhost:8000/api/auth/profile/", {
+            method: "GET",
+            credentials: "include",
+          })
+          csrfToken = getCookie("csrftoken")
+        } catch (error) {
+          console.error("Error fetching CSRF token:", error)
+        }
+      }
+
+      // Submit the form data to your backend
       console.log("Submitting driveway listing:", formData)
 
-      // For development, simulate a successful submission
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-
-      toast({
-        title: "Success!",
-        description: "Your driveway has been listed successfully",
+      const response = await fetch("http://localhost:8000/api/places/places/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": csrfToken || "",
+          "X-Requested-With": "XMLHttpRequest",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          name: formData.name,
+          address: formData.address,
+          city: formData.city,
+          state: formData.state,
+          zip_code: formData.zip,
+          price_per_hour: Number.parseFloat(formData.price),
+          description: formData.description || "",
+          // Add other fields as needed by your API
+        }),
       })
 
-      // Redirect to dashboard with success message
-      router.push("/dashboard?listed=true")
+      if (response.ok) {
+        toast({
+          title: "Success!",
+          description: "Your driveway has been listed successfully",
+        })
+
+        // Redirect to dashboard with success message
+        router.push("/dashboard?listed=true")
+      } else {
+        const errorData = await response.json().catch(() => ({ error: "Unknown error occurred" }))
+        throw new Error(errorData.error || "Failed to create listing")
+      }
     } catch (error) {
       console.error("Error submitting listing:", error)
       toast({
         title: "Submission Failed",
-        description: "There was an error listing your driveway. Please try again.",
+        description:
+          error instanceof Error ? error.message : "There was an error listing your driveway. Please try again.",
         variant: "destructive",
       })
     } finally {
@@ -161,8 +147,8 @@ export default function ListDrivewayPage() {
     }
   }
 
-  // Show loading state while checking auth and permissions
-  if (authLoading || (isCheckingPermission && hasPermission === null)) {
+  // Show loading state while checking auth
+  if (authLoading) {
     return (
       <div className="flex min-h-screen flex-col">
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -179,9 +165,7 @@ export default function ListDrivewayPage() {
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
             <p className="text-lg">Loading...</p>
-            <p className="text-sm text-muted-foreground mt-2">
-              {isCheckingPermission ? "Checking permissions..." : "Loading your account..."}
-            </p>
+            <p className="text-sm text-muted-foreground mt-2">Loading your account...</p>
           </div>
         </main>
       </div>
@@ -193,15 +177,56 @@ export default function ListDrivewayPage() {
     return null
   }
 
-  // If user doesn't have permission, return null (will redirect via useEffect)
-  if (hasPermission === false) {
-    return null
+  // If user doesn't have permission, show a message with a button to become a host
+  if (user.can_list_driveway === false) {
+    return (
+      <div className="flex min-h-screen flex-col">
+
+        <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="container max-w-6xl mx-auto flex h-16 items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Link href="/" className="flex items-center gap-2">
+                <CarFront className="h-6 w-6 text-primary" />
+                <span className="text-xl font-bold">ParkShare</span>
+              </Link>
+            </div>
+            <Link
+              href="/dashboard"
+              className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Dashboard
+            </Link>
+          </div>
+        </header>
+        <main className="flex-1 flex items-center justify-center">
+          <div className="text-center max-w-md p-6">
+            <div className="rounded-full bg-yellow-100 p-3 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+              <ShieldAlert className="h-8 w-8 text-yellow-600" />
+            </div>
+            <h2 className="text-2xl font-bold mb-2">Host Permission Required</h2>
+            <p className="text-muted-foreground mb-6">
+              You need to become a host before you can list your driveway. Becoming a host allows you to list your
+              parking spaces and earn extra income.
+            </p>
+            <Button onClick={() => router.push("/dashboard/become-host")}>Become a Host</Button>
+          </div>
+        </main>
+        <footer className="border-t py-6">
+          <div className="container max-w-6xl mx-auto px-4">
+            <p className="text-center text-sm text-muted-foreground">
+              © {new Date().getFullYear()} ParkShare, Inc. All rights reserved.
+            </p>
+          </div>
+        </footer>
+      </div>
+    )
   }
 
   // Main content - only show when we have confirmed the user has permission
   return (
     <div className="flex min-h-screen flex-col">
-      <PreventTextEditing />
+
 
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container max-w-6xl mx-auto flex h-16 items-center justify-between">
