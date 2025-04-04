@@ -2,17 +2,17 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { CarFront, ArrowLeft, MapPin, DollarSign, Clock, ImagePlus, ShieldAlert } from "lucide-react"
+import { CarFront, ArrowLeft, MapPin, DollarSign, ImagePlus, ShieldAlert, X } from "lucide-react"
 import { Button } from "@/components/shadcn/button"
 import { Input } from "@/components/shadcn/input"
 import { Textarea } from "@/components/shadcn/textarea"
 import { Label } from "@/components/shadcn/label"
 import { useAuth } from "@/components/providers/auth-provider"
 import { useToast } from "@/components/shadcn/toast-context"
-import { getCookie } from "@/lib/csrf" // Import the CSRF utility
+import { ApiClient } from "@/lib/api-client"
 
 export default function ListDrivewayPage() {
   const router = useRouter()
@@ -29,11 +29,63 @@ export default function ListDrivewayPage() {
     description: "",
   })
 
+  // Add state for photos
+  const [photos, setPhotos] = useState<File[]>([])
+  const [photoPreviewUrls, setPhotoPreviewUrls] = useState<string[]>([])
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
   // Handle form input changes
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target
     setFormData((prev) => ({ ...prev, [id]: value }))
   }
+
+  // Handle photo selection
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const newFiles = Array.from(e.target.files)
+
+      // Limit to 5 photos total
+      const totalPhotos = [...photos, ...newFiles]
+      if (totalPhotos.length > 5) {
+        toast({
+          title: "Too many photos",
+          description: "You can upload a maximum of 5 photos",
+          variant: "destructive",
+        })
+        return
+      }
+
+      // Create preview URLs for the new files
+      const newPreviewUrls = newFiles.map((file) => URL.createObjectURL(file))
+
+      // Update state
+      setPhotos((prev) => [...prev, ...newFiles])
+      setPhotoPreviewUrls((prev) => [...prev, ...newPreviewUrls])
+    }
+  }
+
+  // Handle photo removal
+  const handleRemovePhoto = (index: number) => {
+    // Revoke the object URL to avoid memory leaks
+    URL.revokeObjectURL(photoPreviewUrls[index])
+
+    // Remove the photo and its preview URL
+    setPhotos((prev) => prev.filter((_, i) => i !== index))
+    setPhotoPreviewUrls((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  // Trigger file input click when the upload button is clicked
+  const handleUploadButtonClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  // Clean up object URLs when component unmounts
+  useEffect(() => {
+    return () => {
+      photoPreviewUrls.forEach((url) => URL.revokeObjectURL(url))
+    }
+  }, [])
 
   // Redirect if not logged in
   useEffect(() => {
@@ -83,57 +135,26 @@ export default function ListDrivewayPage() {
         return
       }
 
-      // Get CSRF token
-      let csrfToken = getCookie("csrftoken")
+      console.log("Submitting form with photos:", photos.length)
 
-      // If no CSRF token exists, make a GET request to get one
-      if (!csrfToken) {
-        try {
-          await fetch("http://localhost:8000/api/auth/profile/", {
-            method: "GET",
-            credentials: "include",
-          })
-          csrfToken = getCookie("csrftoken")
-        } catch (error) {
-          console.error("Error fetching CSRF token:", error)
-        }
-      }
-
-      // Submit the form data to your backend
-      console.log("Submitting driveway listing:", formData)
-
-      const response = await fetch("http://localhost:8000/api/places/places/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken": csrfToken || "",
-          "X-Requested-With": "XMLHttpRequest",
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          name: formData.name,
-          address: formData.address,
-          city: formData.city,
-          state: formData.state,
-          zip_code: formData.zip,
-          price_per_hour: Number.parseFloat(formData.price),
-          description: formData.description || "",
-          // Add other fields as needed by your API
-        }),
+      // Submit the form data using our API client
+      await ApiClient.listDriveway({
+        name: formData.name,
+        address: formData.address,
+        city: formData.city,
+        state: formData.state,
+        zip_code: formData.zip,
+        price_per_hour: formData.price,
+        photos: photos,
       })
 
-      if (response.ok) {
-        toast({
-          title: "Success!",
-          description: "Your driveway has been listed successfully",
-        })
+      toast({
+        title: "Success!",
+        description: "Your driveway has been listed successfully",
+      })
 
-        // Redirect to dashboard with success message
-        router.push("/dashboard?listed=true")
-      } else {
-        const errorData = await response.json().catch(() => ({ error: "Unknown error occurred" }))
-        throw new Error(errorData.error || "Failed to create listing")
-      }
+      // Redirect to dashboard with success message
+      router.push("/dashboard?listed=true")
     } catch (error) {
       console.error("Error submitting listing:", error)
       toast({
@@ -181,7 +202,6 @@ export default function ListDrivewayPage() {
   if (user.can_list_driveway === false) {
     return (
       <div className="flex min-h-screen flex-col">
-
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="container max-w-6xl mx-auto flex h-16 items-center justify-between">
             <div className="flex items-center gap-2">
@@ -226,8 +246,6 @@ export default function ListDrivewayPage() {
   // Main content - only show when we have confirmed the user has permission
   return (
     <div className="flex min-h-screen flex-col">
-
-
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container max-w-6xl mx-auto flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
@@ -301,9 +319,7 @@ export default function ListDrivewayPage() {
                     <DollarSign className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       id="price"
-                      type="number"
                       min="1"
-                      step="0.01"
                       className="pl-10"
                       placeholder="5.00"
                       value={formData.price}
@@ -328,28 +344,66 @@ export default function ListDrivewayPage() {
 
               <div>
                 <Label>Photos</Label>
-                <div className="mt-2 border-2 border-dashed rounded-md border-muted p-8 text-center">
-                  <ImagePlus className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                  <p className="text-sm text-muted-foreground mb-2">Drag and drop photos here, or click to upload</p>
-                  <Button type="button" variant="outline" size="sm">
-                    Upload Photos
-                  </Button>
-                </div>
-              </div>
+                <div className="mt-2 border-2 border-dashed rounded-md border-muted p-6">
+                  {/* Hidden file input */}
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handlePhotoSelect}
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                  />
 
-              <div>
-                <Label htmlFor="availability">Availability</Label>
-                <div className="mt-2 p-4 border rounded-md">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium">Monday - Friday</span>
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">9:00 AM - 5:00 PM</span>
+                  {/* Photo preview area */}
+                  {photoPreviewUrls.length > 0 ? (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                        {photoPreviewUrls.map((url, index) => (
+                          <div key={index} className="relative group">
+                            <div className="aspect-square rounded-md overflow-hidden border">
+                              <img
+                                src={url || "/placeholder.svg"}
+                                alt={`Driveway photo ${index + 1}`}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleRemovePhoto(index)}
+                              className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 shadow-md"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                        ))}
+
+                        {/* Add more photos button */}
+                        {photoPreviewUrls.length < 5 && (
+                          <button
+                            type="button"
+                            onClick={handleUploadButtonClick}
+                            className="aspect-square rounded-md border-2 border-dashed border-muted flex flex-col items-center justify-center text-muted-foreground hover:text-foreground hover:border-foreground transition-colors"
+                          >
+                            <ImagePlus className="h-8 w-8 mb-2" />
+                            <span className="text-xs">Add Photo</span>
+                          </button>
+                        )}
+                      </div>
+
+                      <p className="text-xs text-muted-foreground text-center">
+                        {photoPreviewUrls.length} of 5 photos added
+                      </p>
                     </div>
-                  </div>
-                  <Button type="button" variant="outline" size="sm" className="w-full">
-                    Set Custom Hours
-                  </Button>
+                  ) : (
+                    <div className="text-center py-8">
+                      <ImagePlus className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                      <p className="text-sm text-muted-foreground mb-4">Add up to 5 photos of your driveway</p>
+                      <Button type="button" variant="outline" size="sm" onClick={handleUploadButtonClick}>
+                        Upload Photos
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
