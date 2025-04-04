@@ -1,13 +1,8 @@
-from django.urls import path, include
-from rest_framework.routers import DefaultRouter
-from .views import PlaceViewSet, BookingViewSet, search_places
-
-router = DefaultRouter()
-router.register(r'places', PlaceViewSet, basename='place')
-router.register(r'bookings', BookingViewSet, basename='booking')
+from django.urls import path
+from . import views
 
 urlpatterns = [
-    path('', include(router.urls)),
-    path('search/', search_places, name='search-places'),
+    path('list-driveway/', views.list_driveway, name='list-driveway'),
+    path('my-listings/', views.my_listings, name='my-listings'),
 ]
 
