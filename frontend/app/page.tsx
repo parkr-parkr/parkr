@@ -3,13 +3,23 @@
 import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { CalendarIcon, CarFront, MapPin, Search, CheckCircle2, DollarSign, Clock, ParkingCircle, User, LogOut } from 'lucide-react'
+import {
+  CalendarIcon,
+  CarFront,
+  MapPin,
+  Search,
+  CheckCircle2,
+  DollarSign,
+  Clock,
+  ParkingCircle,
+  User,
+  LogOut,
+} from "lucide-react"
 
 import { Button } from "@/components/shadcn/button"
 import { Separator } from "@/components/shadcn/separator"
 import { DatePickerWithRange } from "@/components/features/date-picker-with-range"
 import { LocationSearch } from "@/components/features/location-search"
-import { PreventTextEditing } from "./page-fix"
 import { useAuth } from "@/components/providers/auth-provider"
 import { ListDrivewayButton } from "@/components/features/list-driveway-button"
 import type { DateRange } from "react-day-picker"
@@ -69,7 +79,6 @@ export default function Home() {
   return (
     <div className="flex min-h-screen flex-col">
       {/* Add the client component that prevents text editing */}
-      <PreventTextEditing />
 
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         {/* Header content */}
@@ -81,7 +90,7 @@ export default function Home() {
           <nav className="hidden md:flex items-center gap-6">
             {/* Replace the Link with ListDrivewayButton */}
             <ListDrivewayButton variant="ghost" className="text-sm font-medium hover:underline underline-offset-4" />
-  
+
             <Link href="#" className="text-sm font-medium hover:underline underline-offset-4">
               How It Works
             </Link>
@@ -100,9 +109,10 @@ export default function Home() {
                   onClick={() => setIsMenuOpen(!isMenuOpen)}
                   className="flex items-center justify-center h-10 w-10 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
                 >
-                  {user.first_name?.[0]}{user.last_name?.[0]}
+                  {user.first_name?.[0]}
+                  {user.last_name?.[0]}
                 </button>
-                
+
                 {isMenuOpen && (
                   <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
                     <div className="py-1">
@@ -110,25 +120,34 @@ export default function Home() {
                         <p className="text-sm font-medium">{user.full_name || user.username}</p>
                         <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                       </div>
-                      
-                      <Link 
-                        href="/profile" 
+
+                      <Link
+                        href="/profile"
                         className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                         onClick={() => setIsMenuOpen(false)}
                       >
                         <User className="mr-2 h-4 w-4" />
                         <span>Profile</span>
                       </Link>
-                      
-                      <Link 
-                        href="/dashboard" 
+
+                      <Link
+                        href="/dashboard"
                         className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                         onClick={() => setIsMenuOpen(false)}
                       >
                         <MapPin className="mr-2 h-4 w-4" />
                         <span>My Bookings</span>
                       </Link>
-                      
+
+                      <Link
+                        href="/my-listings"
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        <ParkingCircle className="mr-2 h-4 w-4" />
+                        <span>My Listings</span>
+                      </Link>
+
                       <button
                         onClick={handleLogout}
                         className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -435,3 +454,4 @@ export default function Home() {
     </div>
   )
 }
+

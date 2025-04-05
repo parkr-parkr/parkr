@@ -8,84 +8,6 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from .s3_service import s3_service  # Import the S3 service
 
-
-class PlaceViewSet(viewsets.ModelViewSet):
-    """ViewSet for the Place model."""
-    serializer_class = PlaceSerializer
-    parser_classes = [parsers.MultiPartParser, parsers.FormParser, parsers.JSONParser]
-    
-    def get_queryset(self):
-        """Return places based on filters"""
-        queryset = Place.objects.all()
-        
-      
-        city = self.request.query_params.get('city')
-        if city:
-            queryset = queryset.filter(city__icontains=city)
-        
-        
-        state = self.request.query_params.get('state')
-        if state:
-            queryset = queryset.filter(state__icontains=state)
-        
-
-        zip_code = self.request.query_params.get('zip_code')
-        if zip_code:
-            queryset = queryset.filter(zip_code__icontains=zip_code)
-        
-
-        
-        return queryset
-    
-    def get_permissions(self):
-        """Return appropriate permissions based on action"""
-        if self.action in ['create', 'update', 'partial_update', 'destroy']:
-            return [permissions.IsAuthenticated()]
-        return [permissions.AllowAny()]
-    
-    def perform_create(self, serializer):
-        """Create a new place and handle images"""
-        with transaction.atomic():
-            # Save the place first
-            place = serializer.save(owner=self.request.user)
-            
-            # Handle image uploads
-            images = []
-            photo_count = int(self.request.data.get('photo_count', 0))
-            
-            for i in range(1, photo_count + 1):
-                photo_key = f'photo_{i}'
-                if photo_key in self.request.FILES:
-                    image = self.request.FILES[photo_key]
-                    # Set the first image as primary
-                    is_primary = i == 1
-                    
-                    # Upload the image to S3
-                    directory = f"listings/{place.id}"
-                    image_key = s3_service.upload_file(image, directory=directory)
-                    
-                    # Create the PlaceImage with the S3 key
-                    place_image = PlaceImage.objects.create(
-                        place=place,
-                        image_key=image_key,
-                        is_primary=is_primary
-                    )
-                    images.append(place_image)
-    
-    @action(detail=False, methods=['get'])
-    def my_listings(self, request):
-        """Endpoint to get the current user's listings"""
-        if not request.user.is_authenticated:
-            return Response(
-                {"detail": "Authentication required"}, 
-                status=status.HTTP_401_UNAUTHORIZED
-            )
-            
-        listings = Place.objects.filter(owner=request.user)
-        serializer = self.get_serializer(listings, many=True)
-        return Response(serializer.data)
-
-
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated])
 @parser_classes([MultiPartParser, FormParser]) 
@@ -103,7 +25,9 @@ def list_driveway(request):
         # Create a clean copy of the data without is_active
         data = {}
         for key, value in request.data.items():
-            if key != 'is_active':
+            if key == 'description' and (value == 'undefined' or value == 'null'):
+                data[key] = ''  # Replace with empty string
+            elif key != 'is_active':
                 data[key] = value
         
         # Create serializer with the clean data
@@ -156,8 +80,7 @@ def list_driveway(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def my_listings(request):
-    """Endpoint to get the current user's listings"""
+def get_users_listings(request):
     listings = Place.objects.filter(owner=request.user)
     serializer = PlaceSerializer(listings, many=True, context={'request': request})
     return Response(serializer.data)
