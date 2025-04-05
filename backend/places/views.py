@@ -8,6 +8,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from .s3_service import s3_service  # Import the S3 service
 
+<<<<<<< HEAD
 
 class PlaceViewSet(viewsets.ModelViewSet):
     """ViewSet for the Place model."""
@@ -121,6 +122,8 @@ def get_places_by_location(request):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+=======
+>>>>>>> master
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated])
 @parser_classes([MultiPartParser, FormParser])
@@ -138,7 +141,9 @@ def list_driveway(request):
         # Create a clean copy of the data without is_active
         data = {}
         for key, value in request.data.items():
-            if key != 'is_active':
+            if key == 'description' and (value == 'undefined' or value == 'null'):
+                data[key] = ''  # Replace with empty string
+            elif key != 'is_active':
                 data[key] = value
 
         # Create serializer with the clean data
@@ -191,8 +196,7 @@ def list_driveway(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def my_listings(request):
-    """Endpoint to get the current user's listings"""
+def get_users_listings(request):
     listings = Place.objects.filter(owner=request.user)
     serializer = PlaceSerializer(listings, many=True, context={'request': request})
     return Response(serializer.data)
