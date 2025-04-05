@@ -10,6 +10,7 @@ import { Button } from "@/components/shadcn/button"
 import { Input } from "@/components/shadcn/input"
 import { Card, CardContent } from "@/components/shadcn/card"
 import { LocationSearch, Prediction } from "@/components/features/location-search"
+import { ApiClient } from "@/lib/api-client"
 
 
 // Mock data for parking spots
@@ -84,6 +85,8 @@ export default function SearchPage() {
       // In a real app, you would fetch results from an API using the location data
       // For now, we'll just use our mock data
       console.log("Searching with location data:", locationData)
+      // Use api client to call get-listings-by-location/ with longitude and latitude parameters in location data AI!
+      ApiClient.get(``)
       setSearchResults(MOCK_PARKING_SPOTS)
       setIsSearching(false)
     }, 1000)
