@@ -1,7 +1,10 @@
 from django.db import models
 from django.conf import settings
 from .s3_service import s3_service
+import logging
 import uuid
+
+logger = logging.getLogger(__name__)
 
 def listing_image_path(instance, filename):
     """Generate a unique path for listing images"""
@@ -40,17 +43,14 @@ class PlaceImage(models.Model):
         """Get the URL for this image."""
         if self.image_key:
             return s3_service.get_url(self.image_key)
-        elif self.image:
-            # Fall back to the old image URL if available
-            return self.image.url
         return None
     
     def delete(self, *args, **kwargs):
-        """Override delete to also remove the file from S3."""
-        # Delete the file from S3
-        s3_service.delete_file(self.image_key)
-        # Call the parent delete method
-        super().delete(*args, **kwargs)
-    
-    def __str__(self):
-        return f"Image for {self.place.name}"
+        logger.info(f"Deleting image from S3: {self.image_key}")
+        
+        try:
+           s3_service.delete_file(self.image_key)
+        except Exception as e:
+            logger.error(f"Error deleting image from S3: {str(e)}")
+
+        super(PlaceImage, self).delete(*args, **kwargs)
