@@ -7,10 +7,12 @@ interface Prediction {
   displayName: string, 
   formattedAddress: string,
   place_id:  string
+  longitude: string 
+  latitude: string
 }
 
 interface LocationSearchProps {
-  onLocationSelect?: (location: string) => void;
+  onLocationSelect?: (location: Prediction) => void;
 }
 
 declare global {
@@ -20,7 +22,6 @@ declare global {
 }
 
 export function LocationSearch({ onLocationSelect }: LocationSearchProps) {
-  const [userLocation, setUserLocation] = React.useState<{ lat: number, lng: number } | null>(null)
   const [open, setOpen] = React.useState(false);
   const [value, setValue] = React.useState("");
   const [predictions, setPredictions] = React.useState<Prediction[]>([]);
@@ -29,25 +30,6 @@ export function LocationSearch({ onLocationSelect }: LocationSearchProps) {
   const [scriptLoaded, setScriptLoaded] = React.useState(false);
 
   const inputRef = React.useRef<HTMLInputElement>(null);
-
-  React.useEffect(() => {
-    // Get the user's current location using the Geolocation API
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          })
-        },
-        (error) => {
-          setError("Failed to get user location.")
-        }
-      )
-    } else {
-      setError("Geolocation is not supported by this browser.")
-    }
-  }, [])
 
   // Load Google Maps JavaScript API
   React.useEffect(() => {
@@ -107,13 +89,15 @@ export function LocationSearch({ onLocationSelect }: LocationSearchProps) {
         try {
           // Fetch the place details
           await place.fetchFields({
-            fields: ["displayName", "formattedAddress"], // You can add more fields as needed
+            fields: ["displayName", "formattedAddress", "location"], // You can add more fields as needed
           });
 
           // Store the fetched details
           placeDetails.push({
             displayName: place.displayName, 
             formattedAddress: place.formattedAddress,
+            longitude: place.location.lng(),
+            latitude: place.location.lat(),
             place_id: suggestion.placePrediction.place_id, // You can store additional fields if needed
           });
         } catch (error) {
@@ -161,7 +145,8 @@ export function LocationSearch({ onLocationSelect }: LocationSearchProps) {
     try {
  
       if (onLocationSelect) {
-        onLocationSelect(prediction.place_id);
+        console.log(prediction)
+        onLocationSelect(prediction);
       }
     } catch (error) {
       setError("Failed to fetch place details");
