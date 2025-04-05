@@ -26,7 +26,7 @@ class PlaceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Place
         fields = [
-            'id', 'name', 'description', 'address', 'city', 'state', 
-            'zip_code', 'price_per_hour', 'created_at', 'updated_at', 'images'
+            'id', 'name', 'description', 'address', 'city', 'state',
+            'zip_code', 'latitude', 'longitude', 'price_per_hour', 'created_at', 'updated_at', 'images'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
