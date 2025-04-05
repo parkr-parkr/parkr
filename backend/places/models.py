@@ -34,9 +34,35 @@ class Place(models.Model):
     def __str__(self):
         return self.name
 
+class Availability(models.Model):
+    """Model for representing the availability of a parking space."""
+    place = models.ForeignKey(Place, related_name='availabilities', on_delete=models.CASCADE)
+    start_time = models.DateTimeField()
+    end_time = models.DateTimeField()
+    
+    class Meta:
+        verbose_name_plural = "Availabilities"
+
+    def __str__(self):
+        return f"{self.place.name}: {self.start_time} - {self.end_time}"
+
+class Booking(models.Model):
+    """Model for representing bookings of parking spaces."""
+    place = models.ForeignKey(Place, related_name='bookings', on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='bookings')
+    start_time = models.DateTimeField()
+    end_time = models.DateTimeField()
+    booking_time = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-booking_time']
+
+    def __str__(self):
+        return f"{self.user.email} booked {self.place.name} from {self.start_time} to {self.end_time}"
+
 class PlaceImage(models.Model):
     place = models.ForeignKey(Place, related_name='images', on_delete=models.CASCADE)
-    image_key = models.CharField(max_length=255, blank=True)  # Make it nullable
+    image_key = models.CharField(max_length=255, blank=True)
     is_primary = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     
