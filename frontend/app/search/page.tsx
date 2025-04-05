@@ -5,10 +5,12 @@ import type React from "react"
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { CarFront, Search, MapPin, Calendar, Clock, Filter, Star } from "lucide-react"
+import { CarFront, Search, Calendar, Clock, Filter, Star } from "lucide-react"
 import { Button } from "@/components/shadcn/button"
 import { Input } from "@/components/shadcn/input"
 import { Card, CardContent } from "@/components/shadcn/card"
+import { LocationSearch, Prediction } from "@/components/features/location-search"
+
 
 // Mock data for parking spots
 const MOCK_PARKING_SPOTS = [
@@ -66,7 +68,7 @@ const MOCK_PARKING_SPOTS = [
 
 export default function SearchPage() {
   const router = useRouter()
-  const [location, setLocation] = useState("")
+  const [locationData, setLocationData] = useState<Prediction>()
   const [date, setDate] = useState("")
   const [time, setTime] = useState("")
   const [duration, setDuration] = useState("")
@@ -79,11 +81,16 @@ export default function SearchPage() {
 
     // Simulate search delay
     setTimeout(() => {
-      // In a real app, you would fetch results from an API
+      // In a real app, you would fetch results from an API using the location data
       // For now, we'll just use our mock data
+      console.log("Searching with location data:", locationData)
       setSearchResults(MOCK_PARKING_SPOTS)
       setIsSearching(false)
     }, 1000)
+  }
+
+  const handleLocationSelect = (place: Prediction) => {
+    setLocationData(place)
   }
 
   return (
@@ -118,15 +125,7 @@ export default function SearchPage() {
             <form onSubmit={handleSearch} className="bg-white rounded-lg shadow-md p-4">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      placeholder="Where are you going?"
-                      className="pl-10"
-                      value={location}
-                      onChange={(e) => setLocation(e.target.value)}
-                    />
-                  </div>
+                  <LocationSearch onLocationSelect={handleLocationSelect} />
                 </div>
 
                 <div>
@@ -218,4 +217,3 @@ export default function SearchPage() {
     </div>
   )
 }
-
