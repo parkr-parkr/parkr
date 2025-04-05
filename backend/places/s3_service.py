@@ -99,7 +99,6 @@ class S3Service:
             Bucket=self.bucket_name,
             Key=key
         )
-        
     
     def list_files(self, directory=''):
         """
