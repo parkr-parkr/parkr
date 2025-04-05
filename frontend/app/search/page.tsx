@@ -83,12 +83,19 @@ export default function SearchPage() {
     // Simulate search delay
     setTimeout(() => {
       // In a real app, you would fetch results from an API using the location data
+      // In a real app, you would fetch results from an API using the location data
       // For now, we'll just use our mock data
       console.log("Searching with location data:", locationData)
-      // Use api client to call get-listings-by-location/ with longitude and latitude parameters in location data AI!
-      ApiClient.get(``)
-      setSearchResults(MOCK_PARKING_SPOTS)
-      setIsSearching(false)
+      ApiClient.get(`/places/get-listings-by-location/?latitude=${locationData?.latitude}&longitude=${locationData?.longitude}&latitude_range=0.01&longitude_range=0.01`)
+        .then(response => {
+          setSearchResults(response as any);
+        })
+        .catch(error => {
+          console.error("Error fetching parking spots:", error);
+        })
+        .finally(() => {
+          setIsSearching(false);
+        });
     }, 1000)
   }
 
