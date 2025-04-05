@@ -162,7 +162,4 @@ def _delete_place_images(place):
             logger.error(f"Error deleting image {image_id}: {str(e)}", exc_info=True)
             failed_images.append(image_id)
     
-
-   
-    
     return success_count, failed_images
