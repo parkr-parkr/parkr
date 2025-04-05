@@ -88,7 +88,7 @@ export default function SearchPage() {
       console.log("Searching with location data:", locationData)
       ApiClient.get(`/places/get-listings-by-location/?latitude=${locationData?.latitude}&longitude=${locationData?.longitude}&latitude_range=0.01&longitude_range=0.01`)
         .then(response => {
-          setSearchResults(response as any);
+          setSearchResults(response as any); // Type casting to 'any' to avoid type errors
         })
         .catch(error => {
           console.error("Error fetching parking spots:", error);
