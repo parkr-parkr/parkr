@@ -3,11 +3,11 @@ import { MapPin, Loader2 } from "lucide-react";
 import { Input } from "@/components/shadcn/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/shadcn/popover";
 
-export interface Prediction {
+interface Prediction {
   displayName: string, 
   formattedAddress: string,
-  place_id:  string
-  longitude: string 
+  place_id:  string,
+  longitude: string,
   latitude: string
 }
 
@@ -23,46 +23,49 @@ declare global {
 
 export function LocationSearch({ onLocationSelect }: LocationSearchProps) {
   const [open, setOpen] = React.useState(false);
+  const [selectedAddress, setSelectedaddress] = React.useState("")
   const [value, setValue] = React.useState("");
+  const isProgrammaticUpdate = React.useRef(false);
   const [predictions, setPredictions] = React.useState<Prediction[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const [scriptLoaded, setScriptLoaded] = React.useState(false);
 
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   // Load Google Maps JavaScript API
   React.useEffect(() => {
-    if (!window.google && !scriptLoaded) {
+    if (!window.google) {
       const script = document.createElement("script");
       script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places`;
       script.async = true;
       script.defer = true;
-      script.onload = () => {
-        setScriptLoaded(true); // Set the script as loaded when the API is ready
-      };
       script.onerror = () => {
         setError("Failed to load Google Maps API");
       };
       document.head.appendChild(script);
     }
-  }, [scriptLoaded]);
+  }, []);
 
   // Handle input changes and fetch predictions
   const handleInputChange = React.useCallback(async (input: string) => {
-    setLoading(true);
-    setError(null);
-    setValue(input);
+    // Skip the request if value is being updated programmatically
+    if (isProgrammaticUpdate.current) {
+      isProgrammaticUpdate.current = false;
+      return;
+    }
+    setLoading(() => true);
+    setError(() => null);
+    setValue(() => input);
 
     if (!input.trim()) {
-      setPredictions([]);
-      setLoading(false);
+      setPredictions(() => []);
+      setLoading(() =>false);
       return;
     }
 
     if (!window.google || !window.google.maps.places) {
       setError("Places API not loaded");
-      setLoading(false);
+      setLoading(() =>false);
       return;
     }
 
@@ -81,6 +84,7 @@ export function LocationSearch({ onLocationSelect }: LocationSearchProps) {
       // Fetch predictions using AutocompleteSuggestion
       const { suggestions } = await window.google.maps.places.AutocompleteSuggestion.fetchAutocompleteSuggestions(request);
       const placeDetails = [];
+      console.log(suggestions)
 
       // Loop through all the suggestions to fetch place details for each
       for (let suggestion of suggestions) {
@@ -98,7 +102,7 @@ export function LocationSearch({ onLocationSelect }: LocationSearchProps) {
             formattedAddress: place.formattedAddress,
             longitude: place.location.lng(),
             latitude: place.location.lat(),
-            place_id: suggestion.placePrediction.place_id, // You can store additional fields if needed
+            place_id: place.id, // You can store additional fields if needed
           });
         } catch (error) {
           console.error(`Error fetching details for place with id ${suggestion.placePrediction.place_id}:`, error);
@@ -137,9 +141,11 @@ export function LocationSearch({ onLocationSelect }: LocationSearchProps) {
   }, [value, handleInputChange]);
 
   const handleSelectLocation = async (prediction: Prediction) => {
-    setValue(prediction.formattedAddress);
-    setPredictions([]);
-    setOpen(false);
+    isProgrammaticUpdate.current = true; 
+    setValue(() => prediction.formattedAddress);
+    setSelectedaddress(() => prediction.formattedAddress)
+    setPredictions(() => []);
+    setOpen(() => false);
 
     // Fetch the place details using Place and Place ID
     try {
@@ -153,11 +159,22 @@ export function LocationSearch({ onLocationSelect }: LocationSearchProps) {
     }
   };
 
+   // Clear suggestions when the input loses focus
+   const handleBlur = () => {
+    setTimeout(() => {
+      setOpen(false);
+    }, 150); // Delay clearing to avoid immediate reset when selecting a suggestion
+  };
+
   return (
     <Popover
       open={open}
       onOpenChange={(newOpen) => {
         // Enhance handling to prevent popover from closing when there are predictions
+        if (value == selectedAddress) {
+          return;
+        }
+ 
         if (!newOpen && predictions.length > 0) {
           setOpen(true);
         } else {
@@ -173,12 +190,7 @@ export function LocationSearch({ onLocationSelect }: LocationSearchProps) {
             value={value}
             onChange={(e) => setValue(e.target.value)}
             className="w-full"
-            onFocus={() => {
-              // Only open if we have predictions
-              if (predictions.length > 0) {
-                setOpen(true);
-              }
-            }}
+            onBlur={handleBlur} // Add onBlur to clear suggestions
           />
           <MapPin className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 transform opacity-50" />
         </div>
@@ -186,12 +198,7 @@ export function LocationSearch({ onLocationSelect }: LocationSearchProps) {
       <PopoverContent
         className="w-[var(--radix-popper-anchor-width)] p-0"
         align="start"
-        onPointerDownOutside={(e) => {
-          // Prevent the popover from closing when clicking predictions
-          if (e.target instanceof Element && e.target.closest(".predictions-container")) {
-            e.preventDefault();
-          }
-        }}
+        onOpenAutoFocus={(e) => e.preventDefault()}
       >
         <div className="rounded-md bg-popover predictions-container">
           {loading && (
