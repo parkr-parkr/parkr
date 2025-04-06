@@ -20,15 +20,17 @@ export default function ListDrivewayPage() {
   const { user, isLoading: authLoading, checkAuth } = useAuth()
   const { toast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string;
+    location: Prediction | null; // Location is either a Prediction object or null
+    price: string;
+    description: string;
+  }>({
     name: "",
-    address: "",
-    city: "",
-    state: "",
-    zip: "",
+    location: null, // Start with location as null
     price: "",
     description: "",
-  })
+  });
 
   // Add state for location data from Google Maps
   const [locationData, setLocationData] = useState<Prediction | null>(null)
@@ -51,7 +53,7 @@ export default function ListDrivewayPage() {
     // Update the address field with the formatted address
     setFormData((prev) => ({
       ...prev,
-      address: prediction.formattedAddress,
+      location: prediction,
       // You could potentially extract city, state, and zip from the address
       // but for now we'll leave those fields for manual entry
     }))
@@ -137,10 +139,7 @@ export default function ListDrivewayPage() {
       // Validate form data
       if (
         !formData.name ||
-        !formData.address ||
-        !formData.city ||
-        !formData.state ||
-        !formData.zip ||
+        !formData.location ||
         !formData.price
       ) {
         toast({
@@ -157,15 +156,12 @@ export default function ListDrivewayPage() {
       // Submit the form data using our API client
       await ApiClient.listDriveway({
         name: formData.name,
-        address: formData.address,
-        city: formData.city,
-        state: formData.state,
-        zip_code: formData.zip,
+        address: formData.location.formattedAddress,
         price_per_hour: formData.price,
+        description: formData.description,
         photos: photos,
-        // Include latitude and longitude if available from location data
-        latitude: locationData?.latitude,
-        longitude: locationData?.longitude,
+        latitude: formData.location.latitude,
+        longitude: formData.location.longitude
       })
 
       toast({
@@ -309,21 +305,6 @@ export default function ListDrivewayPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="city">City</Label>
-                  <Input id="city" placeholder="San Francisco" value={formData.city} onChange={handleChange} required />
-                </div>
-                <div>
-                  <Label htmlFor="state">State</Label>
-                  <Input id="state" placeholder="CA" value={formData.state} onChange={handleChange} required />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="zip">ZIP Code</Label>
-                  <Input id="zip" placeholder="94105" value={formData.zip} onChange={handleChange} required />
-                </div>
                 <div>
                   <Label htmlFor="price">Price per Hour</Label>
                   <div className="relative">
