@@ -69,7 +69,11 @@ def list_driveway(request):
                 data[key] = value
 
         # Create serializer with the clean data
-        # I want to round longitude and latitude to 6 decimals here AI!
+        # Create serializer with the clean data
+        if 'latitude' in data and data['latitude']:
+            data['latitude'] = round(float(data['latitude']), 6)
+        if 'longitude' in data and data['longitude']:
+            data['longitude'] = round(float(data['longitude']), 6)
         address = data.get('address', '')
         parts = address.split(',')
         if len(parts) >= 3:
