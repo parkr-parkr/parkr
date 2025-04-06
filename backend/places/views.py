@@ -122,8 +122,6 @@ def get_users_listings(request):
     listings = Place.objects.filter(owner=request.user)
     serializer = PlaceSerializer(listings, many=True, context={'request': request})
     return Response(serializer.data)
-<<<<<<< HEAD
-=======
 
 @api_view(['GET', 'PATCH', 'DELETE'])
 @permission_classes([IsAuthenticated])
@@ -200,4 +198,4 @@ def _delete_place_images(place):
             failed_images.append(image_id)
     
     return success_count, failed_images
->>>>>>> master
+
