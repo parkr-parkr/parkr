@@ -5,7 +5,7 @@ import type React from "react"
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { CarFront, ArrowLeft, MapPin, DollarSign, ImagePlus, ShieldAlert, X } from "lucide-react"
+import { CarFront, ArrowLeft, DollarSign, ImagePlus, ShieldAlert, X } from "lucide-react"
 import { Button } from "@/components/shadcn/button"
 import { Input } from "@/components/shadcn/input"
 import { Textarea } from "@/components/shadcn/textarea"
@@ -13,6 +13,7 @@ import { Label } from "@/components/shadcn/label"
 import { useAuth } from "@/components/providers/auth-provider"
 import { useToast } from "@/components/shadcn/toast-context"
 import { ApiClient } from "@/lib/api-client"
+import { LocationSearch, type Prediction } from "@/components/features/location-search"
 
 export default function ListDrivewayPage() {
   const router = useRouter()
@@ -29,6 +30,9 @@ export default function ListDrivewayPage() {
     description: "",
   })
 
+  // Add state for location data from Google Maps
+  const [locationData, setLocationData] = useState<Prediction | null>(null)
+
   // Add state for photos
   const [photos, setPhotos] = useState<File[]>([])
   const [photoPreviewUrls, setPhotoPreviewUrls] = useState<string[]>([])
@@ -38,6 +42,19 @@ export default function ListDrivewayPage() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target
     setFormData((prev) => ({ ...prev, [id]: value }))
+  }
+
+  // Handle location selection from LocationSearch component
+  const handleLocationSelect = (prediction: Prediction) => {
+    setLocationData(prediction)
+
+    // Update the address field with the formatted address
+    setFormData((prev) => ({
+      ...prev,
+      address: prediction.formattedAddress,
+      // You could potentially extract city, state, and zip from the address
+      // but for now we'll leave those fields for manual entry
+    }))
   }
 
   // Handle photo selection
@@ -146,6 +163,9 @@ export default function ListDrivewayPage() {
         zip_code: formData.zip,
         price_per_hour: formData.price,
         photos: photos,
+        // Include latitude and longitude if available from location data
+        latitude: locationData?.latitude,
+        longitude: locationData?.longitude,
       })
 
       toast({
@@ -284,17 +304,8 @@ export default function ListDrivewayPage() {
 
               <div>
                 <Label htmlFor="address">Address</Label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="address"
-                    className="pl-10"
-                    placeholder="123 Main St"
-                    value={formData.address}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
+                {/* Replace the regular input with LocationSearch component */}
+                <LocationSearch onLocationSelect={handleLocationSelect} />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -427,4 +438,3 @@ export default function ListDrivewayPage() {
     </div>
   )
 }
-

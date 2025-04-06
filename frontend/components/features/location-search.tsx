@@ -3,7 +3,7 @@ import { MapPin, Loader2 } from "lucide-react";
 import { Input } from "@/components/shadcn/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/shadcn/popover";
 
-interface Prediction {
+export interface Prediction {
   displayName: string, 
   formattedAddress: string,
   place_id:  string
