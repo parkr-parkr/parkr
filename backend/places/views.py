@@ -69,7 +69,17 @@ def list_driveway(request):
                 data[key] = value
 
         # Create serializer with the clean data
-        # data here has address field in the format 3 Park Pl, Dublin, CA 94568 that should fill in city state and zipcode AI!
+        # Create serializer with the clean data
+        address = data.get('address', '')
+        parts = address.split(',')
+        if len(parts) >= 3:
+            data['address'] = parts[0].strip()
+            data['city'] = parts[1].strip()
+            state_zip = parts[2].strip().split(' ')
+            if len(state_zip) >= 2:
+                data['state'] = state_zip[0].strip()
+                data['zip_code'] = state_zip[1].strip()
+
         serializer = PlaceSerializer(data=data, context={'request': request})
 
         if serializer.is_valid():
