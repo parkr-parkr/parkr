@@ -5,7 +5,7 @@ import type React from "react"
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { CarFront, ArrowLeft, MapPin, DollarSign, ImagePlus, ShieldAlert, X } from "lucide-react"
+import { CarFront, ArrowLeft, DollarSign, ImagePlus, ShieldAlert, X } from "lucide-react"
 import { Button } from "@/components/shadcn/button"
 import { Input } from "@/components/shadcn/input"
 import { Textarea } from "@/components/shadcn/textarea"
@@ -13,21 +13,27 @@ import { Label } from "@/components/shadcn/label"
 import { useAuth } from "@/components/providers/auth-provider"
 import { useToast } from "@/components/shadcn/toast-context"
 import { ApiClient } from "@/lib/api-client"
+import { LocationSearch, type Prediction } from "@/components/features/location-search"
 
 export default function ListDrivewayPage() {
   const router = useRouter()
   const { user, isLoading: authLoading, checkAuth } = useAuth()
   const { toast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string;
+    location: Prediction | null; // Location is either a Prediction object or null
+    price: string;
+    description: string;
+  }>({
     name: "",
-    address: "",
-    city: "",
-    state: "",
-    zip: "",
+    location: null, // Start with location as null
     price: "",
     description: "",
-  })
+  });
+
+  // Add state for location data from Google Maps
+  const [locationData, setLocationData] = useState<Prediction | null>(null)
 
   // Add state for photos
   const [photos, setPhotos] = useState<File[]>([])
@@ -38,6 +44,19 @@ export default function ListDrivewayPage() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target
     setFormData((prev) => ({ ...prev, [id]: value }))
+  }
+
+  // Handle location selection from LocationSearch component
+  const handleLocationSelect = (prediction: Prediction) => {
+    setLocationData(prediction)
+
+    // Update the address field with the formatted address
+    setFormData((prev) => ({
+      ...prev,
+      location: prediction,
+      // You could potentially extract city, state, and zip from the address
+      // but for now we'll leave those fields for manual entry
+    }))
   }
 
   // Handle photo selection
@@ -120,10 +139,7 @@ export default function ListDrivewayPage() {
       // Validate form data
       if (
         !formData.name ||
-        !formData.address ||
-        !formData.city ||
-        !formData.state ||
-        !formData.zip ||
+        !formData.location ||
         !formData.price
       ) {
         toast({
@@ -140,12 +156,12 @@ export default function ListDrivewayPage() {
       // Submit the form data using our API client
       await ApiClient.listDriveway({
         name: formData.name,
-        address: formData.address,
-        city: formData.city,
-        state: formData.state,
-        zip_code: formData.zip,
+        address: formData.location.formattedAddress,
         price_per_hour: formData.price,
+        description: formData.description,
         photos: photos,
+        latitude: formData.location.latitude,
+        longitude: formData.location.longitude
       })
 
       toast({
@@ -284,35 +300,11 @@ export default function ListDrivewayPage() {
 
               <div>
                 <Label htmlFor="address">Address</Label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="address"
-                    className="pl-10"
-                    placeholder="123 Main St"
-                    value={formData.address}
-                    onChange={handleChange}
-                    required
-                  />
-                </div>
+                {/* Replace the regular input with LocationSearch component */}
+                <LocationSearch onLocationSelect={handleLocationSelect} />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="city">City</Label>
-                  <Input id="city" placeholder="San Francisco" value={formData.city} onChange={handleChange} required />
-                </div>
-                <div>
-                  <Label htmlFor="state">State</Label>
-                  <Input id="state" placeholder="CA" value={formData.state} onChange={handleChange} required />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="zip">ZIP Code</Label>
-                  <Input id="zip" placeholder="94105" value={formData.zip} onChange={handleChange} required />
-                </div>
                 <div>
                   <Label htmlFor="price">Price per Hour</Label>
                   <div className="relative">
@@ -427,4 +419,3 @@ export default function ListDrivewayPage() {
     </div>
   )
 }
-
