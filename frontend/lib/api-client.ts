@@ -82,27 +82,28 @@ export class ApiClient {
 
   /**
    * List a driveway
-   */
-  static async listDriveway(data: {
+*/
+static async listDriveway(data: {
     name: string
     address: string
-    city: string
-    state: string
-    zip_code: string
+    latitude: string
+    longitude: string
     price_per_hour: string | number
     description: string
     photos?: File[]
   }): Promise<any> {
     const formData = new FormData()
 
+    console.log(data)
+
     // Add text fields
     formData.append("name", data.name)
     formData.append("address", data.address)
-    formData.append("city", data.city)
-    formData.append("state", data.state)
-    formData.append("zip_code", data.zip_code)
     formData.append("price_per_hour", String(data.price_per_hour))
     formData.append("description", data.description)
+
+    formData.append("longitude", data.longitude)
+    formData.append("latitude", data.latitude)
     // Removed is_active field
 
     // Add photos if provided
@@ -131,6 +132,8 @@ export class ApiClient {
       }
 
       const csrfToken = getCsrfToken()
+
+      console.log(formData)
 
       // Use direct fetch with minimal headers
       const url = `${BACKEND_URL}/api/places/list-driveway/`
