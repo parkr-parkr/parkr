@@ -188,10 +188,6 @@ export default function MyListingsPage() {
       <main className="flex-1 container max-w-6xl mx-auto py-8">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">My Listings</h1>
-          <ListDrivewayButton>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Add New Listing
-          </ListDrivewayButton>
         </div>
 
         <Separator className="mb-8" />
@@ -219,11 +215,23 @@ export default function MyListingsPage() {
             </p>
             <ListDrivewayButton>
               <PlusCircle className="mr-2 h-4 w-4" />
-              List Your Driveway
+              Add New Listing
             </ListDrivewayButton>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <Card className="overflow-hidden border-dashed hover:border-primary/50 transition-colors">
+              <div className="aspect-video w-full bg-muted/50 flex flex-col items-center justify-center">
+                <CarFront className="h-16 w-16 text-primary/60" />
+              </div>
+              <CardFooter className="flex justify-center p-6">
+                <ListDrivewayButton variant="default" className="w-full">
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Add New Listing
+                </ListDrivewayButton>
+              </CardFooter>
+            </Card>
+
             {listings.map((listing) => (
               <Card key={listing.id} className="overflow-hidden">
                 <div className="aspect-video w-full overflow-hidden bg-muted relative">
