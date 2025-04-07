@@ -12,6 +12,7 @@ import { useAuth } from "@/components/providers/auth-provider"
 import { ListDrivewayButton } from "@/components/features/list-driveway-button"
 import { useToast } from "@/components/shadcn/toast-context"
 import { fetchWithCsrf } from "@/lib/csrf"
+import { EditListingDialog } from "@/components/features/edit-listing-dialog"
 
 // Define the listing type based on your API response
 interface Listing {
@@ -40,6 +41,8 @@ export default function MyListingsPage() {
   const [listings, setListings] = useState<Listing[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [selectedListing, setSelectedListing] = useState<Listing | null>(null)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -66,7 +69,6 @@ export default function MyListingsPage() {
       const data = await response.json()
       console.log("Listings data:", data)
 
-      
       setListings(Array.isArray(data) ? data : [])
     } catch (err) {
       console.error("Error fetching listings:", err)
@@ -111,26 +113,33 @@ export default function MyListingsPage() {
     }
   }
 
-  const handleEditListing = (id: number) => {
-    router.push(`/dashboard/edit-listing/${id}`)
+  // Updated to open the dialog instead of navigating
+  const handleEditListing = (listing: Listing) => {
+    setSelectedListing(listing)
+    setIsEditDialogOpen(true)
   }
 
+  // New function to handle listing updates
+  const handleListingUpdated = (updatedListing: Listing) => {
+    setListings(listings.map((listing) => (listing.id === updatedListing.id ? updatedListing : listing)))
+  }
 
+  // Keeping your original getImageUrl function
   const getImageUrl = (listing: Listing) => {
     if (!listing.images || listing.images.length === 0) {
       return "/placeholder.svg?height=200&width=400"
     }
-  
+
     const primaryImage = listing.images.find((img) => img.is_primary === true)
-    
+
     if (primaryImage && primaryImage.url) {
       return primaryImage.url
     }
-    
+
     if (listing.images[0] && listing.images[0].url) {
       return listing.images[0].url
     }
-    
+
     return "/placeholder.svg?height=200&width=400"
   }
 
@@ -254,7 +263,7 @@ export default function MyListingsPage() {
                   </p>
                 </CardContent>
                 <CardFooter className="flex justify-between">
-                  <Button variant="outline" onClick={() => handleEditListing(listing.id)}>
+                  <Button variant="outline" onClick={() => handleEditListing(listing)}>
                     <Edit className="mr-2 h-4 w-4" />
                     Edit
                   </Button>
@@ -267,6 +276,14 @@ export default function MyListingsPage() {
             ))}
           </div>
         )}
+
+        {/* Add the edit dialog */}
+        <EditListingDialog
+          listing={selectedListing}
+          open={isEditDialogOpen}
+          onOpenChange={setIsEditDialogOpen}
+          onListingUpdated={handleListingUpdated}
+        />
       </main>
 
       <footer className="border-t bg-muted/50 py-6">
