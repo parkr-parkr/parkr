@@ -199,3 +199,65 @@ def _delete_place_images(place):
     
     return success_count, failed_images
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@parser_classes([MultiPartParser, FormParser])
+def add_image(request):
+    """Add an image to a listing"""
+    place_id = request.data.get('place_id')
+    is_primary = request.data.get('is_primary', 'false').lower() == 'true'
+    
+    try:
+        place = Place.objects.get(id=place_id, owner=request.user)
+    except Place.DoesNotExist:
+        return Response({"error": "Listing not found or you don't have permission"}, 
+                       status=status.HTTP_404_NOT_FOUND)
+    
+    if 'image' not in request.FILES:
+        return Response({"error": "No image provided"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    image = request.FILES['image']
+    directory = f"listings/{place.id}"
+    image_key = s3_service.upload_file(image, directory=directory)
+    
+    if is_primary:
+        PlaceImage.objects.filter(place=place, is_primary=True).update(is_primary=False)
+    
+    place_image = PlaceImage.objects.create(
+        place=place,
+        image_key=image_key,
+        is_primary=is_primary
+    )
+    
+    serializer = PlaceImageSerializer(place_image)
+    return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_image(request, image_id):
+    """Delete a specific image"""
+    try:
+        image = PlaceImage.objects.get(id=image_id, place__owner=request.user)
+        image.delete()  
+        return Response({"message": "Image deleted successfully"}, status=status.HTTP_200_OK)
+    except PlaceImage.DoesNotExist:
+        return Response({"error": "Image not found or you don't have permission"}, 
+                       status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def set_primary_image(request, image_id):
+    """Set an image as the primary image for a listing"""
+    try:
+        image = PlaceImage.objects.get(id=image_id, place__owner=request.user)
+        place = image.place
+        
+        PlaceImage.objects.filter(place=place, is_primary=True).update(is_primary=False)
+        
+        image.is_primary = True
+        image.save()
+        
+        return Response({"message": "Primary image updated successfully"}, status=status.HTTP_200_OK)
+    except PlaceImage.DoesNotExist:
+        return Response({"error": "Image not found or you don't have permission"}, 
+                       status=status.HTTP_404_NOT_FOUND)
