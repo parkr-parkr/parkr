@@ -1,16 +1,30 @@
 "use client"
 
+import { useState } from "react"
 import { useAuth } from "@/components/providers/auth-provider"
 import { Button } from "@/components/shadcn/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/shadcn/card"
-import { CarFront, ArrowLeft } from "lucide-react"
+import { CarFront, ArrowLeft, AlertTriangle } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
+import { useToast } from "@/components/shadcn/toast-context"
+import { fetchWithCsrf } from "@/lib/csrf"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/shadcn/dialog"
 
 export default function ProfilePage() {
-  const { user, isLoading } = useAuth()
+  const { user, isLoading, logout } = useAuth()
   const router = useRouter()
+  const { toast } = useToast()
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   // Redirect if not logged in
   useEffect(() => {
@@ -18,6 +32,47 @@ export default function ProfilePage() {
       router.push("/login")
     }
   }, [user, isLoading, router])
+
+  const handleDeleteAccount = async () => {
+    if (!user) return
+
+    setIsDeleting(true)
+    try {
+      // Call the API to delete the user account
+      const response = await fetchWithCsrf(`http://localhost:8000/api/auth/users/${user.id}/`, {
+        method: "DELETE",
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Failed to delete account")
+      }
+
+      // Close the dialog
+      setIsDeleteDialogOpen(false)
+
+      // Show success message
+      toast({
+        title: "Account Deleted",
+        description: "Your account has been successfully deleted.",
+      })
+
+      // Log the user out
+      await logout()
+
+      // Redirect to home page
+      router.push("/")
+    } catch (error) {
+      console.error("Error deleting account:", error)
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to delete your account. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsDeleting(false)
+    }
+  }
 
   if (isLoading) {
     return (
@@ -86,7 +141,12 @@ export default function ProfilePage() {
               <p>{user.is_verified ? "Verified" : "Not verified"}</p>
             </div>
 
-            <Button variant="outline">Edit Profile</Button>
+            <div className="flex flex-col sm:flex-row gap-4 pt-4">
+              <Button variant="outline">Edit Profile</Button>
+              <Button variant="destructive" onClick={() => setIsDeleteDialogOpen(true)}>
+                Delete Account
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </main>
@@ -97,7 +157,39 @@ export default function ProfilePage() {
           </p>
         </div>
       </footer>
+
+      {/* Delete Account Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              Delete Account
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete your account? This action cannot be undone and all your data will be
+              permanently removed.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm font-medium">This will delete:</p>
+            <ul className="list-disc list-inside text-sm text-muted-foreground mt-2 space-y-1">
+              <li>Your profile information</li>
+              <li>Your driveway listings</li>
+              <li>Your booking history</li>
+              <li>All other account data</li>
+            </ul>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} disabled={isDeleting}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteAccount} disabled={isDeleting}>
+              {isDeleting ? "Deleting..." : "Delete Account"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
-

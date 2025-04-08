@@ -316,3 +316,32 @@ class BecomeHostView(APIView):
             return Response({
                 "error": "An error occurred while processing your request"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class UserDeleteView(APIView):
+    """
+    API endpoint that allows users to delete their own account.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, pk):
+        if str(request.user.id) != str(pk):
+            return Response(
+                {"error": "You do not have permission to delete this account."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        try:
+            user = request.user
+            
+            user.delete()
+            
+            return Response(
+                {"message": "Account successfully deleted."},
+                status=status.HTTP_204_NO_CONTENT
+            )
+        except Exception as e:
+            logger.error(f"Error deleting user account: {str(e)}", exc_info=True)
+            return Response(
+                {"error": "An error occurred while deleting your account."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
