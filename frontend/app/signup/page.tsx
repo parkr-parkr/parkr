@@ -23,9 +23,6 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null)
   const [testResult, setTestResult] = useState<string | null>(null)
 
-
-  
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
@@ -41,32 +38,31 @@ export default function SignupPage() {
         throw new Error("Password must be at least 8 characters long")
       }
 
-      // Combine first and last name for the backend
-      const name = `${firstName} ${lastName}`
-      const username = email.split("@")[0] // Generate username from email
+      // Create the registration payload matching what the backend expects
+      const registrationData = {
+        first_name: firstName,
+        last_name: lastName,
+        email: email,
+        password: password,
+        // No username field - backend will handle this
+      }
 
-      console.log("Sending registration data:", { name, email, password, username })
+      console.log("Sending registration data:", registrationData)
 
-      // Send data to Django backend with explicit CORS settings
+      // Send data to Django backend
       const response = await fetch("http://localhost:8000/api/auth/register/", {
         method: "POST",
-        mode: "cors",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
-          Origin: window.location.origin,
         },
-        body: JSON.stringify({
-          name,
-          email,
-          password,
-          username,
-        }),
+        credentials: "include", // Important for cookies
+        body: JSON.stringify(registrationData),
       })
 
       console.log("Registration response status:", response.status)
-      console.log("Registration response headers:", Object.fromEntries([...response.headers.entries()]))
 
+      // Try to get the response data
       let data
       try {
         const text = await response.text()
@@ -85,7 +81,22 @@ export default function SignupPage() {
       }
 
       if (!response.ok) {
-        throw new Error(data?.error || `Registration failed with status ${response.status}`)
+        // Handle validation errors from the backend
+        if (data && typeof data === "object") {
+          // Extract error messages from the response
+          const errorMessages = Object.entries(data)
+            .map(([key, value]) => {
+              if (Array.isArray(value)) {
+                return `${key}: ${value.join(", ")}`
+              }
+              return `${key}: ${value}`
+            })
+            .join("\n")
+
+          throw new Error(errorMessages || `Registration failed with status ${response.status}`)
+        } else {
+          throw new Error(`Registration failed with status ${response.status}`)
+        }
       }
 
       // Redirect to login on success
@@ -124,13 +135,14 @@ export default function SignupPage() {
             <p className="mt-2 text-sm text-muted-foreground">Sign up to start finding and sharing parking spaces</p>
           </div>
 
-          {error && <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md">{error}</div>}
+          {error && (
+            <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md whitespace-pre-line">{error}</div>
+          )}
           {testResult && (
             <div className="bg-blue-100 text-blue-800 text-sm p-3 rounded-md mt-2 whitespace-pre-line">
               {testResult}
             </div>
           )}
-
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-4">
@@ -281,4 +293,3 @@ export default function SignupPage() {
     </div>
   )
 }
-

@@ -7,11 +7,11 @@ User = get_user_model()
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True)
     password_confirm = serializers.CharField(write_only=True, required=False)  # Made optional
-    name = serializers.CharField(required=False, write_only=True)  # Add this line
+    name = serializers.CharField(required=False, write_only=True)
     
     class Meta:
         model = User
-        fields = ('email', 'username', 'password', 'password_confirm', 'first_name', 'last_name', 'name')
+        fields = ('email', 'password', 'password_confirm', 'first_name', 'last_name', 'name')
         extra_kwargs = {
             'first_name': {'required': False},
             'last_name': {'required': False},
@@ -22,15 +22,17 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         # If password_confirm is provided, validate it matches password
         if 'password_confirm' in attrs and attrs.get('password') != attrs.get('password_confirm'):
             raise serializers.ValidationError({"password": "Password fields didn't match."})
+        
+        # Check if email already exists
+        email = attrs.get('email')
+        if User.objects.filter(email=email).exists():
+            raise serializers.ValidationError({"email": "A user with this email already exists."})
+            
         return attrs
         
     def create(self, validated_data):
         # Remove password_confirm from the data if it exists
         validated_data.pop('password_confirm', None)
-        
-        # Generate username from email if not provided
-        if 'username' not in validated_data or not validated_data['username']:
-            validated_data['username'] = validated_data['email'].split('@')[0]
         
         # Split name into first_name and last_name if provided
         if 'name' in validated_data and validated_data['name']:
@@ -40,7 +42,6 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         
         user = User.objects.create_user(
             email=validated_data['email'],
-            username=validated_data['username'],
             password=validated_data['password'],
             first_name=validated_data.get('first_name', ''),
             last_name=validated_data.get('last_name', ''),
@@ -65,9 +66,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = User
-        fields = ('id', 'email', 'username', 'first_name', 'last_name', 'full_name', 'is_verified', 'can_list_driveway')
+        fields = ('id', 'email', 'first_name', 'last_name', 'full_name', 'is_verified', 'can_list_driveway')
         read_only_fields = ('email', 'is_verified', 'can_list_driveway')
     
     def get_full_name(self, obj):
         return obj.get_full_name()
-
