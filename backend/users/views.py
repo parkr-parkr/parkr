@@ -106,7 +106,12 @@ class UserLoginView(APIView):
             logger.warning(user)
 
             if user is not None:
-            
+                if not user.is_verified:
+                        logger.warning("Login attempt by unverified user: %s", email)
+                        return Response(
+                            {"error": "Please verify your email address before logging in"},
+                            status=status.HTTP_403_FORBIDDEN
+                        )
                 # Log session information before login
                 logger.info("Session before login: %s", request.session.session_key)
 
