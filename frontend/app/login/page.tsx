@@ -24,6 +24,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [testResult, setTestResult] = useState<string | null>(null)
   const justRegistered = searchParams.get("registered") === "true"
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null)
 
   // Redirect if already logged in
   useEffect(() => {
@@ -31,6 +32,7 @@ export default function LoginPage() {
       router.push("/")
     }
   }, [user, router])
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -44,6 +46,12 @@ export default function LoginPage() {
       console.log("Login result:", result)
 
       if (result.success) {
+        if (!result.user?.is_verified) {
+          setError("Please verify your email address before logging in")
+          setIsLoading(false)
+          return
+        }
+
         console.log("Login successful, redirecting to home page")
         router.push("/")
       } else {
@@ -111,6 +119,13 @@ export default function LoginPage() {
           )}
 
           {error && <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md">{error}</div>}
+
+          {unverifiedEmail && (
+            <div className="bg-yellow-100 text-yellow-800 text-sm p-3 rounded-md">
+              <p>Your account is not verified. Please check your email for a verification link.</p>
+
+            </div>
+          )}
 
           {testResult && <div className="bg-blue-100 text-blue-800 text-sm p-3 rounded-md">{testResult}</div>}
 
@@ -215,4 +230,3 @@ export default function LoginPage() {
     </div>
   )
 }
-
