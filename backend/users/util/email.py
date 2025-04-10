@@ -9,7 +9,7 @@ from django.core.mail import EmailMessage
 from ..models import PasswordResetToken
 
 def send_verification_email(user, verification_token):
-    verification_link = f"{settings.FRONTEND_URL}/verify-email/{verification_token.token}"  # Replace with your actual frontend URL
+    verification_link = f"{settings.FRONTEND_URL}/verify-email?token={verification_token.token}"
 
     # Render the HTML email template
     subject = 'Parkr Email Verification'
@@ -39,4 +39,3 @@ def send_forgot_password_email(user, uidb64, reset_token):
         [user.email],
         html_message=html_message
     )
- 
