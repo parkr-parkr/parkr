@@ -12,6 +12,7 @@ import { Input } from "@/components/shadcn/input"
 import { Separator } from "@/components/shadcn/separator"
 import { useAuth } from "@/components/providers/auth-provider"
 import { PreventTextEditing } from "../page-fix"
+import { ResendVerification } from "@/components/features/resend-verification"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -21,10 +22,22 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [testResult, setTestResult] = useState<string | null>(null)
+  const [alertState, setAlertState] = useState<{
+    type: "success" | "error" | "warning" | "info" | null
+    message: string | null
+    email?: string | null
+  }>({ type: null, message: null })
   const justRegistered = searchParams.get("registered") === "true"
-  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null)
+
+  // Set initial alert if just registered
+  useEffect(() => {
+    if (justRegistered) {
+      setAlertState({
+        type: "success",
+        message: "Account created successfully! Please check your email to verify your account before logging in.",
+      })
+    }
+  }, [justRegistered])
 
   // Redirect if already logged in
   useEffect(() => {
@@ -33,11 +46,10 @@ export default function LoginPage() {
     }
   }, [user, router])
 
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     console.log("Form submitted with:", { email, password })
-    setError(null)
+    setAlertState({ type: null, message: null })
     setIsLoading(true)
 
     try {
@@ -46,21 +58,32 @@ export default function LoginPage() {
       console.log("Login result:", result)
 
       if (result.success) {
-        if (!result.user?.is_verified) {
-          setError("Please verify your email address before logging in")
-          setIsLoading(false)
-          return
-        }
-
+        
         console.log("Login successful, redirecting to home page")
         router.push("/")
       } else {
         console.log("Login failed:", result.error)
-        setError(result.error || "Login failed")
+
+        if (result.error && result.error.toLowerCase().includes("verify")) {
+          setAlertState({
+            type: "warning",
+            message:
+              "Your account is not verified. Please check your email for a verification link or click below to resend it.",
+            email: email,
+          })
+        } else {
+          setAlertState({
+            type: "error",
+            message: result.error || "Login failed",
+          })
+        }
       }
     } catch (err) {
       console.error("Login error:", err)
-      setError("An unexpected error occurred")
+      setAlertState({
+        type: "error",
+        message: "An unexpected error occurred",
+      })
     } finally {
       setIsLoading(false)
     }
@@ -112,22 +135,22 @@ export default function LoginPage() {
             <p className="mt-2 text-sm text-muted-foreground">Log in to your account to continue</p>
           </div>
 
-          {justRegistered && (
-            <div className="bg-green-100 text-green-800 text-sm p-3 rounded-md">
-              Account created successfully! Please log in with your credentials.
+          {alertState.type && alertState.message && (
+            <div
+              className={`text-sm p-4 rounded-md ${
+                alertState.type === "success"
+                  ? "bg-green-100 text-green-800"
+                  : alertState.type === "error"
+                    ? "bg-destructive/10 text-destructive"
+                    : alertState.type === "warning"
+                      ? "bg-amber-50 border border-amber-200 text-amber-800"
+                      : "bg-blue-100 text-blue-800"
+              }`}
+            >
+              <p className={alertState.type === "warning" ? "mb-3" : ""}>{alertState.message}</p>
+              {alertState.type === "warning" && alertState.email && <ResendVerification email={alertState.email} />}
             </div>
           )}
-
-          {error && <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md">{error}</div>}
-
-          {unverifiedEmail && (
-            <div className="bg-yellow-100 text-yellow-800 text-sm p-3 rounded-md">
-              <p>Your account is not verified. Please check your email for a verification link.</p>
-
-            </div>
-          )}
-
-          {testResult && <div className="bg-blue-100 text-blue-800 text-sm p-3 rounded-md">{testResult}</div>}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-4">

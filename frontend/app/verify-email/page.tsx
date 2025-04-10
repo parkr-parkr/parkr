@@ -1,8 +1,7 @@
-'use client'
-
+"use client"
 
 import { useEffect, useState } from "react"
-import { useRouter, useSearchParams, useParams } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { CheckCircle, XCircle, Loader2 } from "lucide-react"
 import { Button } from "@/components/shadcn/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/shadcn/card"
@@ -12,7 +11,7 @@ export default function VerifyEmailPage() {
   const [message, setMessage] = useState("")
   const router = useRouter()
   const searchParams = useSearchParams()
-  const {token} = useParams()
+  const token = searchParams.get("token")
 
   useEffect(() => {
     if (!token) {
@@ -23,19 +22,27 @@ export default function VerifyEmailPage() {
 
     const verifyEmail = async () => {
       try {
-        const response = await fetch(`http://localhost:8000/api/auth/verify-email/${token}`, {
+        console.log("Verifying email with token:", token)
+        // Note the trailing slash - important for Django REST Framework
+        const response = await fetch(`http://localhost:8000/api/auth/verify-email/${token}/`, {
           method: "GET",
         })
 
+        console.log("Verification response status:", response.status)
+
         if (response.ok) {
+          const data = await response.json().catch(() => ({}))
+          console.log("Verification success data:", data)
           setStatus("success")
-          setMessage("Your email has been successfully verified!")
+          setMessage(data.message || "Your email has been successfully verified!")
         } else {
           const data = await response.json().catch(() => ({}))
+          console.log("Verification error data:", data)
           setStatus("error")
-          setMessage(data.message || "Failed to verify email. The link may be invalid or expired.")
+          setMessage(data.error || "Failed to verify email. The link may be invalid or expired.")
         }
       } catch (error) {
+        console.error("Verification error:", error)
         setStatus("error")
         setMessage("An error occurred while verifying your email. Please try again later.")
       }

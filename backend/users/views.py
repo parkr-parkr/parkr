@@ -350,3 +350,52 @@ class UserDeleteView(APIView):
                 {"error": "An error occurred while deleting your account."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+class ResendVerificationEmailView(APIView):
+    permission_classes = [AllowAny]
+    
+    def post(self, request):
+        email = request.data.get('email')
+        
+        if not email:
+            return Response(
+                {"error": "Email is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        try:
+            user = User.objects.get(email=email)
+            
+
+            if user.is_verified:
+                return Response(
+                    {"error": "This account is already verified"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+  
+            VerificationToken.objects.filter(user=user).delete()
+
+            verification_token = VerificationToken.objects.create(user=user)
+
+            send_verification_email(user, verification_token)
+            
+            logger.info(f"Verification email resent to: {email}")
+            
+            return Response(
+                {"message": "Verification email sent successfully"},
+                status=status.HTTP_200_OK
+            )
+            
+        except User.DoesNotExist:
+
+            logger.warning(f"Resend verification attempt for non-existent user: {email}")
+            return Response(
+                {"message": "If this email exists in our system, a verification link has been sent"},
+                status=status.HTTP_200_OK
+            )
+        except Exception as e:
+            logger.error(f"Error sending verification email: {str(e)}")
+            return Response(
+                {"error": "Failed to send verification email"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
