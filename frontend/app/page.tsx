@@ -19,7 +19,7 @@ import {
 import { Button } from "@/components/shadcn/button"
 import { Separator } from "@/components/shadcn/separator"
 import { DatePickerWithRange } from "@/components/features/date-picker-with-range"
-import { LocationSearch } from "@/components/features/location-search"
+import { LocationSearch, type Prediction } from "@/components/features/location-search"
 import { useAuth } from "@/components/providers/auth-provider"
 import { ListDrivewayButton } from "@/components/features/list-driveway-button"
 import type { DateRange } from "react-day-picker"
@@ -27,7 +27,7 @@ import type { DateRange } from "react-day-picker"
 export default function Home() {
   const router = useRouter()
   const { user, isLoading, logout } = useAuth()
-  const [selectedLocation, setSelectedLocation] = useState("")
+  const [selectedLocation, setSelectedLocation] = useState<Prediction | null>(null)
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: new Date(),
     to: new Date(new Date().setDate(new Date().getDate() + 2)),
@@ -41,10 +41,15 @@ export default function Home() {
       return
     }
 
-    // Construct query parameters
+    // Construct query parameters with properly serialized location data
     const params = new URLSearchParams()
-    params.append("location", selectedLocation)
 
+    // Add location data as separate parameters
+    params.append("lat", selectedLocation.latitude)
+    params.append("lng", selectedLocation.longitude)
+    params.append("address", selectedLocation.formattedAddress)
+
+    // Add date range parameters
     if (dateRange?.from) {
       params.append("startDate", dateRange.from.toISOString())
     }
@@ -53,8 +58,8 @@ export default function Home() {
       params.append("endDate", dateRange.to.toISOString())
     }
 
-    // Navigate to the map page with query parameters
-    router.push(`/map?${params.toString()}`)
+    // Navigate to the search page with query parameters
+    router.push(`/search?${params.toString()}`)
   }
 
   const handleLogout = async () => {
@@ -454,4 +459,3 @@ export default function Home() {
     </div>
   )
 }
-
