@@ -35,6 +35,7 @@ interface Listing {
   created_at: string
 }
 
+// Fix bracket error in this file AI!
 export default function MyListingsPage() {
   const router = useRouter()
   const { user, isLoading: authLoading } = useAuth()
