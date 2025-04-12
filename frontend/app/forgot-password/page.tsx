@@ -34,14 +34,7 @@ export default function ForgotPasswordPage() {
       await new Promise((resolve) => setTimeout(resolve, 300))
 
       // Replace with your actual API endpoint
-      // We have an api-client.ts file. Refactor this to use the api client for consistency. AI!
-      const response = await fetch("http://localhost:8000/api/auth/forgot-password/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email }),
-      })
+      const response = await ApiClient.post("/api/auth/forgot-password/", { email })
 
       // Add another small delay before showing success/error
       await new Promise((resolve) => setTimeout(resolve, 200))
@@ -54,9 +47,9 @@ export default function ForgotPasswordPage() {
         setStatus("error")
         setMessage(data.message || "Failed to send password reset email. Please try again.")
       }
-    } catch (error) {
+    } catch (error: any) {
       setStatus("error")
-      setMessage("An error occurred. Please try again later.")
+      setMessage(error.message || "An error occurred. Please try again later.")
     }
   }
 
