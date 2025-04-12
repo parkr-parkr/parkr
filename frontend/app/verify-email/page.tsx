@@ -24,13 +24,9 @@ export default function VerifyEmailPage() {
       try {
         console.log("Verifying email and logging in with token:", token)
 
-
-        // Use api client ts below AI!
-        const response = await fetch(`http://localhost:8000/api/auth/verify-and-login/${token}/`, {
-          method: "GET",
-        })
-
-        console.log("Verification and login response status:", response.status)
+        const result = await ApiClient.get<{ user: any; token: string }>(
+          `/auth/verify-and-login/${token}/`,
+        )
 
         if (response.ok) {
           const data = await response.json()
