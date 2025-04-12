@@ -56,7 +56,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Check backend availability
   const checkBackendStatus = async () => {
     try {
-      // The below call should recieve a csrf token, make sure to set it when its recieved AI!
       console.log("Checking backend availability...")
       const response = await fetch(`${BACKEND_URL}/api/auth/login/`, {
         method: "OPTIONS",
@@ -69,6 +68,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
 
       const isAvailable = response.ok || response.status === 200 || response.status === 204
+
+      const csrfToken = response.headers.get("X-CSRFToken")
+      if (csrfToken) {
+        document.cookie = `csrftoken=${csrfToken}; path=/;`
+        console.log("CSRF token set from headers:", csrfToken)
+      }
+
       console.log("Backend availability check result:", isAvailable, "Status:", response.status)
       setIsBackendAvailable(isAvailable)
       return isAvailable
