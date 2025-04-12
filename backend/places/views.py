@@ -8,6 +8,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from .s3_service import s3_service
 from .util.address_utils import AddressParser
+from .util.location_utils import LocationParser
 import logging
 
 logger = logging.getLogger(__name__)
@@ -73,12 +74,8 @@ def list_driveway(request):
         # Fill out necessary data with address
         AddressParser.fill_address_data(data)
 
-
         # Refactor line 78 to 81 into a LocationParser method and call it here AI!
-        if 'latitude' in data and data['latitude']:
-            data['latitude'] = round(float(data['latitude']), 6)
-        if 'longitude' in data and data['longitude']:
-            data['longitude'] = round(float(data['longitude']), 6)
+        data = LocationParser.parse_location(data)
 
         serializer = PlaceSerializer(data=data, context={'request': request})
 
