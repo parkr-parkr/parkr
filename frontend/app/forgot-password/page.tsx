@@ -34,21 +34,17 @@ export default function ForgotPasswordPage() {
       // This helps prevent flashing by ensuring the loading state has time to render
       await new Promise((resolve) => setTimeout(resolve, 300))
 
-            // ApiClient was updated to not use callback but return a success failure object update caccordingly AI!
-      ApiClient.post(
-        "/api/auth/forgot-password/",
-        { email },
-        async () => {
-          await new Promise((resolve) => setTimeout(resolve, 200))
-          setStatus("success")
-          setMessage("Password reset instructions have been sent to your email")
-        },
-        async (error: any) => {
-          await new Promise((resolve) => setTimeout(resolve, 200))
-          setStatus("error")
-          setMessage(error.message || "An error occurred. Please try again later.")
-        },
-      )
+      const result = await ApiClient.post("/api/auth/forgot-password/", { email })
+
+      if (result.success) {
+        await new Promise((resolve) => setTimeout(resolve, 200))
+        setStatus("success")
+        setMessage("Password reset instructions have been sent to your email")
+      } else {
+        await new Promise((resolve) => setTimeout(resolve, 200))
+        setStatus("error")
+        setMessage(result.error?.message || "An error occurred. Please try again later.")
+      }
     } catch (error: any) {
       setStatus("error")
       setMessage("An unexpected error occurred. Please try again later.")
