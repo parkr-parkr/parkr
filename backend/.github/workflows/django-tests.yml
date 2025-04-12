@@ -2,9 +2,10 @@ name: Django Tests
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ '*' ]  # Run on all branches
   pull_request:
-    branches: [ main, develop ]
+    branches: [ 'master', 'develop' ]  # Run on PRs targeting master or develop
+  workflow_dispatch:  # Allow manual triggering
 
 jobs:
   test:
@@ -41,12 +42,6 @@ jobs:
     
     - name: Run Tests
       env:
-        DJANGO_SETTINGS_MODULE: config.test_settings
+        DJANGO_SETTINGS_MODULE: your_project.test_settings
       run: |
-        pytest users/tests/ --cov=users --cov-report=xml --cov-report=term
-    
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
-      with:
-        file: ./coverage.xml
-        fail_ci_if_error: true
+        pytest
