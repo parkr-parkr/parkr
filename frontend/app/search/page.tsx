@@ -142,6 +142,7 @@ export default function SearchPage() {
     }
 
     // Make API call to fetch parking spots
+    // Api Client does not work like this. Fix it please AI!
     if (locationData) {
       ApiClient.get(
         `/api/places/get-listings-by-location/?latitude=${locationData.latitude}&longitude=${locationData.longitude}&latitude_range=0.25&longitude_range=0.25`,
