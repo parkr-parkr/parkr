@@ -7,42 +7,10 @@ from django.db import transaction
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from .s3_service import s3_service
+from .address_utils import AddressParser
 import logging
 
 logger = logging.getLogger(__name__)
-
-# For the parse address and fill address data. Refactor into a utility class AI!
-def _parse_address(address_string):
-    """
-    Parses an address string into its components (address, city, state, zip_code).
-    """
-    parts = address_string.split(',')
-    address = None
-    city = None
-    state = None
-    zip_code = None
-
-    if len(parts) >= 3:
-        address = parts[0].strip()
-        city = parts[1].strip()
-        state_zip = parts[2].strip().split(' ')
-        if len(state_zip) >= 2:
-            state = state_zip[0].strip()
-            zip_code = state_zip[1].strip()
-
-    return address, city, state, zip_code
-
-def _fill_address_data(data):
-    """Fills in the address, city, state, and zip code from the address string."""
-    # Parse the address into components
-    address_string = data.get('address', '')
-    address, city, state, zip_code = _parse_address(address_string)
-
-    # Update the data dictionary with the parsed values
-    data['address'] = address
-    data['city'] = city
-    data['state'] = state
-    data['zip_code'] = zip_code
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -103,7 +71,7 @@ def list_driveway(request):
                 data[key] = value
 
         # Fill out necessary data with address
-        _fill_address_data(data)
+        AddressParser.fill_address_data(data)
 
         if 'latitude' in data and data['latitude']:
             data['latitude'] = round(float(data['latitude']), 6)
