@@ -28,6 +28,7 @@ $($Commands -join "`r`n")
 $backendCommands = @(
     "cd backend",
     ".\venv\scripts\activate",
+    "pip install -r requirements.txt",
     "python manage.py runserver"
 )
 Start-DevServer -Name "Backend" -Directory "$PSScriptRoot\backend" -Commands $backendCommands
@@ -35,6 +36,7 @@ Start-DevServer -Name "Backend" -Directory "$PSScriptRoot\backend" -Commands $ba
 # Start frontend server
 $frontendCommands = @(
     "cd frontend",
+    "npm install",   
     "npm run dev"
 )
 Start-DevServer -Name "Frontend" -Directory "$PSScriptRoot\frontend" -Commands $frontendCommands

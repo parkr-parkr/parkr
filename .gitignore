@@ -4,3 +4,5 @@ backend/__pycache__/
 backend/db.sqlite3
 .env
 .aider*
+Backend-commands.ps1
+Frontend-commands.ps1 

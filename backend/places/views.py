@@ -12,6 +12,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def get_places_by_location(request):
     """
     Retrieve parking places based on longitude and latitude.
@@ -69,7 +70,6 @@ def list_driveway(request):
                 data[key] = value
 
         # Create serializer with the clean data
-        # I want to round longitude and latitude to 6 decimals here AI!
         address = data.get('address', '')
         parts = address.split(',')
         if len(parts) >= 3:
