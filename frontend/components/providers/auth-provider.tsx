@@ -39,6 +39,35 @@ type AuthContextType = {
   loginWithToken: (token: string) => Promise<{ success: boolean; error?: string }>
 }
 
+export const checkBackendStatus = async () => {
+  try {
+    console.log("Checking backend availability...")
+    const response = await fetch(`${BACKEND_URL}/api/auth/login/`, {
+      method: "OPTIONS",
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Request-Method": "POST",
+        "Access-Control-Request-Headers": "content-type",
+        Origin: window.location.origin,
+      },
+    })
+
+    const isAvailable = response.ok || response.status === 200 || response.status === 204
+
+    const csrfToken = response.headers.get("X-CSRFToken")
+    if (csrfToken) {
+      document.cookie = `csrftoken=${csrfToken}; path=/;`
+      console.log("CSRF token set from headers:", csrfToken)
+    }
+
+    console.log("Backend availability check result:", isAvailable, "Status:", response.status)
+    return isAvailable
+  } catch (error) {
+    console.error("Backend availability check failed:", error)
+    return false
+  }
+}
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 // Use direct backend URL with trailing slashes
@@ -53,38 +82,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const AUTH_CHECK_THROTTLE = 5000 // 5 seconds
   const [isBackendAvailable, setIsBackendAvailable] = useState<boolean | null>(null)
 
-  // Check backend availability
-  const checkBackendStatus = async () => {
-    try {
-      console.log("Checking backend availability...")
-      const response = await fetch(`${BACKEND_URL}/api/auth/login/`, {
-        method: "OPTIONS",
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Request-Method": "POST",
-          "Access-Control-Request-Headers": "content-type",
-          Origin: window.location.origin,
-        },
-      })
-
-      const isAvailable = response.ok || response.status === 200 || response.status === 204
-
-      const csrfToken = response.headers.get("X-CSRFToken")
-      if (csrfToken) {
-        document.cookie = `csrftoken=${csrfToken}; path=/;`
-        console.log("CSRF token set from headers:", csrfToken)
-      }
-
-      console.log("Backend availability check result:", isAvailable, "Status:", response.status)
-      setIsBackendAvailable(isAvailable)
-      return isAvailable
-    } catch (error) {
-      console.error("Backend availability check failed:", error)
-      setIsBackendAvailable(false)
-      return false
-    }
-  }
-
   // Simplified check session function
   const checkSession = async () => {
     try {
@@ -95,6 +92,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return null
     }
   }
+
+  // Use effect to call checkbackend status and check if its available AI!
 
   // Check if user is authenticated on initial load
   const checkAuth = async () => {
@@ -359,7 +358,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logout,
         checkAuth,
         isBackendAvailable,
-        checkBackendStatus,
         checkSession,
         setUserAndToken,
         loginWithToken,
