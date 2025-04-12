@@ -13,6 +13,7 @@ import { ListDrivewayButton } from "@/components/features/list-driveway-button"
 import { useToast } from "@/components/shadcn/toast-context"
 import { fetchWithCsrf } from "@/lib/csrf"
 import { EditListingDialog } from "@/components/features/edit-listing-dialog"
+import { ApiClient } from "@/lib/api-client"
 
 // Define the listing type based on your API response
 interface Listing {
@@ -59,6 +60,7 @@ export default function MyListingsPage() {
     setIsLoading(true)
     setError(null)
 
+    // This doesn't need the try catch AI!
     try {
       const { data, success, error: apiError } = await ApiClient.get<Listing[]>("/api/places/my-listings/")
 
