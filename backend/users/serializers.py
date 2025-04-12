@@ -50,7 +50,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         # Remove password_confirm from the data if it exists
         validated_data.pop('password_confirm', None)
         
-        # Split name into first_name and last_name if provided
+        # Split name into first_name and last_name if providedss
         if 'name' in validated_data and validated_data['name']:
             name_parts = validated_data.pop('name').split(' ', 1)
             validated_data['first_name'] = name_parts[0]
