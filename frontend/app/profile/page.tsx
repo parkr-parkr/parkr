@@ -39,6 +39,7 @@ export default function ProfilePage() {
     setIsDeleting(true)
     try {
       // Call the API to delete the user account
+      // Call the below with api client ts AI!
       const response = await fetchWithCsrf(`http://localhost:8000/api/auth/users/${user.id}/`, {
         method: "DELETE",
       })
