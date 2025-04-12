@@ -7,6 +7,8 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:800
  * Django-specific API client with built-in error handling and CSRF protection
  */
 export class ApiClient {
+
+  // Modify the below methods to return a result that indicates if there was a success or failure instead of the onSuccess and onError callbacks  Update any dependents who use the callback structure AI!
   /**
    * Make a GET request
    */
@@ -20,7 +22,6 @@ export class ApiClient {
 
     return response.json()
   }
-
   /**
    * Make a POST request with JSON data
    */
