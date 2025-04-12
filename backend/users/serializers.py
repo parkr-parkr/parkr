@@ -39,7 +39,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         if 'password_confirm' in attrs and attrs.get('password') != attrs.get('password_confirm'):
             raise serializers.ValidationError({"password": "Password fields didn't match."})
         
-        # Check if email already exists
+        # Check if email already existsd
         email = attrs.get('email')
         if User.objects.filter(email=email).exists():
             raise serializers.ValidationError({"email": "A user with this email already exists."})
