@@ -21,12 +21,15 @@ export class ApiClient {
     return response.json()
   }
 
-
-  // All these below methods should take in an onSuccess and onError handler AI!
   /**
    * Make a POST request with JSON data
    */
-  static async post<T>(endpoint: string, data?: any): Promise<T> {
+  static async post<T>(
+    endpoint: string,
+    data?: any,
+    onSuccess?: (data: T) => void,
+    onError?: (error: any) => void,
+  ): Promise<T | void> {
     const url = `${BACKEND_URL}${endpoint}`
 
     try {
@@ -39,17 +42,24 @@ export class ApiClient {
         await this.handleErrorResponse(response)
       }
 
-      return response.json()
+      const responseData: T = await response.json()
+      onSuccess?.(responseData)
+      return responseData
     } catch (error) {
       console.error("POST request failed:", error)
-      throw error
+      onError?.(error)
     }
   }
 
   /**
    * Make a PUT request with JSON data
    */
-  static async put<T>(endpoint: string, data?: any): Promise<T> {
+  static async put<T>(
+    endpoint: string,
+    data?: any,
+    onSuccess?: (data: T) => void,
+    onError?: (error: any) => void,
+  ): Promise<T | void> {
     const url = `${BACKEND_URL}${endpoint}`
 
     try {
@@ -62,17 +72,24 @@ export class ApiClient {
         await this.handleErrorResponse(response)
       }
 
-      return response.json()
+      const responseData: T = await response.json()
+      onSuccess?.(responseData)
+      return responseData
     } catch (error) {
       console.error("PUT request failed:", error)
-      throw error
+      onError?.(error)
     }
   }
 
   /**
    * Make a PATCH request with JSON data
    */
-  static async patch<T>(endpoint: string, data?: any): Promise<T> {
+  static async patch<T>(
+    endpoint: string,
+    data?: any,
+    onSuccess?: (data: T) => void,
+    onError?: (error: any) => void,
+  ): Promise<T | void> {
     const url = `${BACKEND_URL}${endpoint}`
 
     try {
@@ -85,17 +102,23 @@ export class ApiClient {
         await this.handleErrorResponse(response)
       }
 
-      return response.json()
+      const responseData: T = await response.json()
+      onSuccess?.(responseData)
+      return responseData
     } catch (error) {
       console.error("PATCH request failed:", error)
-      throw error
+      onError?.(error)
     }
   }
 
   /**
    * Make a DELETE request
    */
-  static async delete<T>(endpoint: string): Promise<T> {
+  static async delete<T>(
+    endpoint: string,
+    onSuccess?: (data: T) => void,
+    onError?: (error: any) => void,
+  ): Promise<T | void> {
     const url = `${BACKEND_URL}${endpoint}`
 
     try {
@@ -107,10 +130,12 @@ export class ApiClient {
         await this.handleErrorResponse(response)
       }
 
-      return response.json()
+      const responseData: T = await response.json()
+      onSuccess?.(responseData)
+      return responseData
     } catch (error) {
       console.error("DELETE request failed:", error)
-      throw error
+      onError?.(error)
     }
   }
 
