@@ -29,16 +29,14 @@ export default function VerifyEmailPage() {
           `/auth/verify-and-login/${token}/`,
         )
 
-        // Make sure to use result below AI!
-        if (response.ok) {
-          const data = await response.json()
-          console.log("Verification and login success data:", data)
+        if (result.success) {
+          console.log("Verification and login success data:", result.data)
 
           setStatus("success")
 
-          if (data.user && data.token) {
+          if (result.data.user && result.data.token) {
             // Use the setUserAndToken function to update auth state
-            setUserAndToken(data.user, data.token)
+            setUserAndToken(result.data.user, result.data.token)
 
             // Redirect to home page after a short delay
             setTimeout(() => {
@@ -46,8 +44,8 @@ export default function VerifyEmailPage() {
             }, 1500)
           } else {
             // If we only got a token but no user data, try to login with the token
-            if (data.token && !data.user) {
-              const loginResult = await loginWithToken(data.token)
+            if (result.data.token && !result.data.user) {
+              const loginResult = await loginWithToken(result.data.token)
 
               if (loginResult.success) {
                 // Redirect to home page after a short delay
@@ -62,14 +60,13 @@ export default function VerifyEmailPage() {
             }
           }
         } else {
-          const data = await response.json().catch(() => ({}))
-          console.log("Verification error data:", data)
+          console.log("Verification error data:", result.error)
           setStatus("error")
 
           // Redirect to login page with error message
-          const errorMessage = data.error || "Failed to verify email. The link may be invalid or expired."
+          const errorMessage = result.error || "Failed to verify email. The link may be invalid or expired."
           router.push(
-            `/login?error=verification-failed&message=${encodeURIComponent(errorMessage)}&email=${encodeURIComponent(data.email || "")}`,
+            `/login?error=verification-failed&message=${encodeURIComponent(errorMessage)}&email=${encodeURIComponent(result.data?.email || "")}`,
           )
         }
       } catch (error) {
