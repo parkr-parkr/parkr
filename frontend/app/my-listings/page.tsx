@@ -116,6 +116,7 @@ export default function MyListingsPage() {
   // Updated to open the dialog instead of navigating
   const handleEditListing = (listing: Listing) => {
     setSelectedListing(listing)
+    // When this dialog is opened, we need to make sure the address is passed into the location picker AI!
     setIsEditDialogOpen(true)
   }
 
