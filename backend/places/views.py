@@ -7,7 +7,7 @@ from django.db import transaction
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from .s3_service import s3_service
-from .address_utils import AddressParser
+from .util.address_utils import AddressParser
 import logging
 
 logger = logging.getLogger(__name__)
@@ -73,6 +73,7 @@ def list_driveway(request):
         # Fill out necessary data with address
         AddressParser.fill_address_data(data)
 
+        # We should factor this out into a reusable method, in a location util file #AI
         if 'latitude' in data and data['latitude']:
             data['latitude'] = round(float(data['latitude']), 6)
         if 'longitude' in data and data['longitude']:
@@ -146,7 +147,9 @@ def listing(request, listing_id):
             return Response(serializer.data)
             
         elif request.method == 'PATCH':
-            serializer = PlaceSerializer(listing_obj, data=request.data, partial=True)
+            data = request.data
+            AddressParser.fill_address_data(data)
+            serializer = PlaceSerializer(listing_obj, data=data, partial=True)
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data)
