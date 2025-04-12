@@ -93,7 +93,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // Use effect to call checkbackend status and check if its available AI!
+  useEffect(() => {
+    const initAuth = async () => {
+      const isAvailable = await checkBackendStatus()
+      if (isAvailable) {
+        checkAuth()
+      } else {
+        setIsLoading(false)
+      }
+    }
+    initAuth()
+  }, [])
 
   // Check if user is authenticated on initial load
   const checkAuth = async () => {
