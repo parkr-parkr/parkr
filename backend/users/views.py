@@ -2,6 +2,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate, login, logout
 from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
 from django.utils.decorators import method_decorator
@@ -21,6 +22,8 @@ from django.contrib.auth.tokens import default_token_generator
 from .models import PasswordResetToken
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
+from django.utils import timezone
+from datetime import timedelta
 
 User = get_user_model()
 
@@ -399,3 +402,34 @@ class ResendVerificationEmailView(APIView):
                 {"error": "Failed to send verification email"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+        
+class VerifyAndLoginView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, token):
+        try:
+            verification_token = VerificationToken.objects.get(token=token)
+            user = verification_token.user
+            
+            if not user.is_verified:
+                user.is_verified = True
+                user.save()
+            
+            verification_token.delete()
+            
+            refresh = RefreshToken.for_user(user)
+            
+            return Response({
+                "message": "Email verified successfully and logged in.",
+                "token": str(refresh.access_token),
+                "refresh": str(refresh),
+                "user": {
+                    "id": user.id,
+                    "email": user.email,
+                    "name": user.name if hasattr(user, 'name') else "",
+                    "is_verified": True
+                }
+            }, status=status.HTTP_200_OK)
+            
+        except VerificationToken.DoesNotExist:
+            return Response({"error": "Invalid verification token."}, status=status.HTTP_400_BAD_REQUEST)
