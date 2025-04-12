@@ -11,15 +11,21 @@ export class ApiClient {
   /**
    * Make a GET request
    */
-  static async get<T>(endpoint: string): Promise<T> {
+  static async get<T>(endpoint: string): Promise<{ success: boolean; data?: T; error?: any }> {
     const url = `${BACKEND_URL}${endpoint}`
-    const response = await fetchWithCsrf(url)
+    try {
+      const response = await fetchWithCsrf(url)
 
-    if (!response.ok) {
-      await this.handleErrorResponse(response)
+      if (!response.ok) {
+        await this.handleErrorResponse(response)
+      }
+
+      const responseData: T = await response.json()
+      return { success: true, data: responseData }
+    } catch (error) {
+      console.error("GET request failed:", error)
+      return { success: false, error }
     }
-
-    return response.json()
   }
   /**
    * Make a POST request with JSON data

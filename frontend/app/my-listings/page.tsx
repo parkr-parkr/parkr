@@ -60,18 +60,18 @@ export default function MyListingsPage() {
     setError(null)
 
     try {
-      // Update line 64 to api-client.ts. ApiClient.get() AI!
-      const response = await fetchWithCsrf("http://localhost:8000/api/places/my-listings/")
+      const { data, success, error: apiError } = await ApiClient.get<Listing[]>("/api/places/my-listings/")
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch listings")
+      if (!success) {
+        throw new Error(apiError || "Failed to fetch listings")
       }
 
-      const data = await response.json()
-      console.log("Listings data:", data)
+      const listingsData = data
 
-      setListings(Array.isArray(data) ? data : [])
-    } catch (err) {
+      console.log("Listings data:", listingsData)
+
+      setListings(Array.isArray(listingsData) ? listingsData : [])
+    } catch (err: any) {
       console.error("Error fetching listings:", err)
       setError("Failed to load your listings. Please try again later.")
       toast({
@@ -90,12 +90,10 @@ export default function MyListingsPage() {
     }
 
     try {
-      const response = await fetchWithCsrf(`http://localhost:8000/api/places/listings/${id}/`, {
-        method: "DELETE",
-      })
+      const { success, error } = await ApiClient.delete(`/api/places/listings/${id}/`)
 
-      if (!response.ok) {
-        throw new Error("Failed to delete listing")
+      if (!success) {
+        throw new Error(error || "Failed to delete listing")
       }
 
       setListings(listings.filter((listing) => listing.id !== id))
