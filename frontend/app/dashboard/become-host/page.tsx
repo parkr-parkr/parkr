@@ -32,20 +32,8 @@ export default function BecomeHostPage() {
       // Get CSRF token from cookies
       let csrfToken = getCookie("csrftoken")
 
-      // If no CSRF token exists, make a GET request to get one
-      if (!csrfToken) {
-        try {
-          await fetch("http://localhost:8000/api/auth/profile/", {
-            method: "GET",
-            credentials: "include",
-          })
-          csrfToken = getCookie("csrftoken")
-        } catch (error) {
-          console.error("Error fetching CSRF token:", error)
-        }
-      }
-
       // Make the request to the Django backend with CSRF token
+      // Use api client in below call AI!
       const response = await fetch("http://localhost:8000/api/auth/become-host/", {
         method: "POST",
         headers: {
