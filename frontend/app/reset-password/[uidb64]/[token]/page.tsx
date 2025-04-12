@@ -78,26 +78,20 @@ export default function ResetPasswordPage() {
       // Add a small delay to ensure the loading state is visible
       await new Promise((resolve) => setTimeout(resolve, 300))
 
-      // Below use ApiClient in api-client.ts AI!
-      const response = await fetch("http://localhost:8000/api/auth/reset-password/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      ApiClient.post(
+        "/api/auth/reset-password/",
+        { uidb64, token, password },
+        async () => {
+          await new Promise((resolve) => setTimeout(resolve, 200))
+          setStatus("success")
+          setMessage("Your password has been reset successfully")
         },
-        body: JSON.stringify({ uidb64, token, password }),
-      })
-
-      // Add another small delay before showing success/error
-      await new Promise((resolve) => setTimeout(resolve, 200))
-
-      if (response.ok) {
-        setStatus("success")
-        setMessage("Your password has been reset successfully")
-      } else {
-        const data = await response.json().catch(() => ({}))
-        setStatus("error")
-        setMessage(data.message || "Failed to reset password. Please try again.")
-      }
+        async (error: any) => {
+          await new Promise((resolve) => setTimeout(resolve, 200))
+          setStatus("error")
+          setMessage(error.message || "Failed to reset password. Please try again.")
+        },
+      )
     } catch (error) {
       setStatus("error")
       setMessage("An error occurred. Please try again later.")
