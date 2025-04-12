@@ -64,7 +64,6 @@ class UserRegistrationView(APIView):
 
 
 # Add CSRF exemption for development - remove in production
-@method_decorator(csrf_exempt, name='dispatch')
 class UserLoginView(APIView):
     permission_classes = [AllowAny]
 
@@ -85,13 +84,13 @@ class UserLoginView(APIView):
                 return Response({
                     "detail": "No user found for this session",
                     "csrf": get_token(request)
-                }, status=status.HTTP_404_NOT_FOUND)
+                })
         else:
             # If no session ID is present, return a message
             return Response({
                 "detail": "No session ID provided",
                 "csrf": get_token(request)
-            }, status=status.HTTP_400_BAD_REQUEST)
+            })
 
     def post(self, request):
         logger.info("Login attempt with data: %s", request.data)
