@@ -11,6 +11,7 @@ import { Button } from "@/components/shadcn/button"
 import { Input } from "@/components/shadcn/input"
 import { Separator } from "@/components/shadcn/separator"
 import { PreventTextEditing } from "../page-fix"
+import { ApiClient } from "@/lib/api-client"
 
 export default function SignupPage() {
   const router = useRouter()
@@ -49,54 +50,10 @@ export default function SignupPage() {
 
       console.log("Sending registration data:", registrationData)
 
-      // Send data to Django backend
-      const response = await fetch("http://localhost:8000/api/auth/register/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        credentials: "include", // Important for cookies
-        body: JSON.stringify(registrationData),
-      })
+      const result = await ApiClient.post<{ message: string }>("api/auth/register/", registrationData)
 
-      console.log("Registration response status:", response.status)
-
-      // Try to get the response data
-      let data
-      try {
-        const text = await response.text()
-        console.log("Raw response text:", text)
-
-        try {
-          data = JSON.parse(text)
-          console.log("Parsed JSON data:", data)
-        } catch (jsonError) {
-          console.error("JSON parse error:", jsonError)
-          data = { error: "Could not parse server response" }
-        }
-      } catch (textError) {
-        console.error("Text read error:", textError)
-        data = { error: "Could not read server response" }
-      }
-
-      if (!response.ok) {
-        // Handle validation errors from the backend
-        if (data && typeof data === "object") {
-          // Extract error messages from the response
-          const errorMessages = Object.entries(data)
-            .map(([key, value]) => {
-              if (Array.isArray(value)) {
-                return `${key}: ${value.join(", ")}`
-              }
-              return `${key}: ${value}`
-            })
-            .join("\n")
-
-          throw new Error(errorMessages || `Registration failed with status ${response.status}`)
-        } else {
-          throw new Error(`Registration failed with status ${response.status}`)
-        }
+      if (!result.success) {
+        throw new Error(result.error || "Registration failed")
       }
 
       // Redirect to login on success

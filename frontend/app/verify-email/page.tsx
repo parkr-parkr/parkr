@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { Loader2 } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/shadcn/card"
 import { useAuth } from "@/components/providers/auth-provider"
+import { ApiClient } from "@/lib/api-client"
 
 export default function VerifyEmailPage() {
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading")
@@ -24,22 +25,18 @@ export default function VerifyEmailPage() {
       try {
         console.log("Verifying email and logging in with token:", token)
 
+        const result = await ApiClient.get<{ user: any; token: string }>(
+          `/auth/verify-and-login/${token}/`,
+        )
 
-        const response = await fetch(`http://localhost:8000/api/auth/verify-and-login/${token}/`, {
-          method: "GET",
-        })
-
-        console.log("Verification and login response status:", response.status)
-
-        if (response.ok) {
-          const data = await response.json()
-          console.log("Verification and login success data:", data)
+        if (result.success) {
+          console.log("Verification and login success data:", result.data)
 
           setStatus("success")
 
-          if (data.user && data.token) {
+          if (result.data.user && result.data.token) {
             // Use the setUserAndToken function to update auth state
-            setUserAndToken(data.user, data.token)
+            setUserAndToken(result.data.user, result.data.token)
 
             // Redirect to home page after a short delay
             setTimeout(() => {
@@ -47,8 +44,8 @@ export default function VerifyEmailPage() {
             }, 1500)
           } else {
             // If we only got a token but no user data, try to login with the token
-            if (data.token && !data.user) {
-              const loginResult = await loginWithToken(data.token)
+            if (result.data.token && !result.data.user) {
+              const loginResult = await loginWithToken(result.data.token)
 
               if (loginResult.success) {
                 // Redirect to home page after a short delay
@@ -63,14 +60,13 @@ export default function VerifyEmailPage() {
             }
           }
         } else {
-          const data = await response.json().catch(() => ({}))
-          console.log("Verification error data:", data)
+          console.log("Verification error data:", result.error)
           setStatus("error")
 
           // Redirect to login page with error message
-          const errorMessage = data.error || "Failed to verify email. The link may be invalid or expired."
+          const errorMessage = result.error || "Failed to verify email. The link may be invalid or expired."
           router.push(
-            `/login?error=verification-failed&message=${encodeURIComponent(errorMessage)}&email=${encodeURIComponent(data.email || "")}`,
+            `/login?error=verification-failed&message=${encodeURIComponent(errorMessage)}&email=${encodeURIComponent(result.data?.email || "")}`,
           )
         }
       } catch (error) {

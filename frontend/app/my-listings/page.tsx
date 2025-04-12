@@ -11,8 +11,8 @@ import { Separator } from "@/components/shadcn/separator"
 import { useAuth } from "@/components/providers/auth-provider"
 import { ListDrivewayButton } from "@/components/features/list-driveway-button"
 import { useToast } from "@/components/shadcn/toast-context"
-import { fetchWithCsrf } from "@/lib/csrf"
 import { EditListingDialog } from "@/components/features/edit-listing-dialog"
+import { ApiClient } from "@/lib/api-client"
 
 // Define the listing type based on your API response
 interface Listing {
@@ -60,16 +60,21 @@ export default function MyListingsPage() {
     setError(null)
 
     try {
-      const response = await fetchWithCsrf("http://localhost:8000/api/places/my-listings/")
+      const { data, success, error: apiError } = await ApiClient.get<Listing[]>("/api/places/my-listings/")
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch listings")
+      if (!success) {
+        setError(apiError || "Failed to fetch listings")
+        toast({
+          title: "Error",
+          description: "Failed to load your listings. Please try again later.",
+          variant: "destructive",
+        })
+        return
       }
 
-      const data = await response.json()
-      console.log("Listings data:", data)
-
-      setListings(Array.isArray(data) ? data : [])
+      const listingsData = data
+      console.log("Listings data:", listingsData)
+      setListings(Array.isArray(listingsData) ? listingsData : [])
     } catch (err) {
       console.error("Error fetching listings:", err)
       setError("Failed to load your listings. Please try again later.")
@@ -89,12 +94,10 @@ export default function MyListingsPage() {
     }
 
     try {
-      const response = await fetchWithCsrf(`http://localhost:8000/api/places/listings/${id}/`, {
-        method: "DELETE",
-      })
+      const { success, error } = await ApiClient.delete(`/api/places/listings/${id}/`)
 
-      if (!response.ok) {
-        throw new Error("Failed to delete listing")
+      if (!success) {
+        throw new Error(error || "Failed to delete listing")
       }
 
       setListings(listings.filter((listing) => listing.id !== id))
@@ -310,4 +313,3 @@ export default function MyListingsPage() {
     </div>
   )
 }
-

@@ -2,6 +2,8 @@
  * Utility functions for handling CSRF tokens in fetch requests
  */
 
+import { checkBackendStatus, useAuth } from "@/components/providers/auth-provider"
+
 // Helper function to get a cookie value by name
 export function getCookie(name: string): string | undefined {
   const value = `; ${document.cookie}`
@@ -19,17 +21,8 @@ export async function fetchWithCsrf(url: string, options: RequestInit = {}): Pro
 
   // If no CSRF token exists, make a GET request to get one
   if (!csrfToken) {
-    try {
-      await fetch("http://localhost:8000/api/auth/profile/", {
-        method: "GET",
-        credentials: "include",
-      })
-      csrfToken = getCookie("csrftoken")
-    } catch (error) {
-      console.error("Error fetching CSRF token:", error)
-    }
+    checkBackendStatus()
   }
-
   // Create a new options object to avoid modifying the original
   const fetchOptions: RequestInit = {
     ...options,

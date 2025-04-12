@@ -7,24 +7,33 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:800
  * Django-specific API client with built-in error handling and CSRF protection
  */
 export class ApiClient {
+
   /**
    * Make a GET request
    */
-  static async get<T>(endpoint: string): Promise<T> {
+  static async get<T>(endpoint: string): Promise<{ success: boolean; data?: T; error?: any }> {
     const url = `${BACKEND_URL}${endpoint}`
-    const response = await fetchWithCsrf(url)
+    try {
+      const response = await fetchWithCsrf(url)
 
-    if (!response.ok) {
-      await this.handleErrorResponse(response)
+      if (!response.ok) {
+        await this.handleErrorResponse(response)
+      }
+
+      const responseData: T = await response.json()
+      return { success: true, data: responseData }
+    } catch (error) {
+      console.error("GET request failed:", error)
+      return { success: false, error }
     }
-
-    return response.json()
   }
-
   /**
    * Make a POST request with JSON data
    */
-  static async post<T>(endpoint: string, data?: any): Promise<T> {
+static async post<T>(
+    endpoint: string,
+    data?: any,
+  ): Promise<{ success: boolean; data?: T; error?: any }> {
     const url = `${BACKEND_URL}${endpoint}`
 
     try {
@@ -37,17 +46,21 @@ export class ApiClient {
         await this.handleErrorResponse(response)
       }
 
-      return response.json()
+      const responseData: T = await response.json()
+      return { success: true, data: responseData }
     } catch (error) {
       console.error("POST request failed:", error)
-      throw error
+      return { success: false, error }
     }
   }
 
   /**
    * Make a PUT request with JSON data
    */
-  static async put<T>(endpoint: string, data?: any): Promise<T> {
+  static async put<T>(
+    endpoint: string,
+    data?: any,
+  ): Promise<{ success: boolean; data?: T; error?: any }> {
     const url = `${BACKEND_URL}${endpoint}`
 
     try {
@@ -60,17 +73,21 @@ export class ApiClient {
         await this.handleErrorResponse(response)
       }
 
-      return response.json()
+      const responseData: T = await response.json()
+      return { success: true, data: responseData }
     } catch (error) {
       console.error("PUT request failed:", error)
-      throw error
+      return { success: false, error }
     }
   }
 
   /**
    * Make a PATCH request with JSON data
    */
-  static async patch<T>(endpoint: string, data?: any): Promise<T> {
+  static async patch<T>(
+    endpoint: string,
+    data?: any,
+  ): Promise<{ success: boolean; data?: T; error?: any }> {
     const url = `${BACKEND_URL}${endpoint}`
 
     try {
@@ -83,17 +100,20 @@ export class ApiClient {
         await this.handleErrorResponse(response)
       }
 
-      return response.json()
+      const responseData: T = await response.json()
+      return { success: true, data: responseData }
     } catch (error) {
       console.error("PATCH request failed:", error)
-      throw error
+      return { success: false, error }
     }
   }
 
   /**
    * Make a DELETE request
    */
-  static async delete<T>(endpoint: string): Promise<T> {
+  static async delete<T>(
+    endpoint: string,
+  ): Promise<{ success: boolean; data?: T; error?: any }> {
     const url = `${BACKEND_URL}${endpoint}`
 
     try {
@@ -105,17 +125,17 @@ export class ApiClient {
         await this.handleErrorResponse(response)
       }
 
-      return response.json()
+      const responseData: T = await response.json()
+      return { success: true, data: responseData }
     } catch (error) {
       console.error("DELETE request failed:", error)
-      throw error
+      return { success: false, error }
     }
   }
-
   /**
    * Make a POST request with FormData (for file uploads)
    */
-  static async postFormData<T>(endpoint: string, formData: FormData): Promise<T> {
+  static async postFormData<T>(endpoint: string, formData: FormData): Promise<{ success: boolean; data?: T; error?: any }> {
     const url = `${BACKEND_URL}${endpoint}`
 
     console.log("Posting form data to:", url)
@@ -141,10 +161,11 @@ export class ApiClient {
         await this.handleErrorResponse(response)
       }
 
-      return response.json()
+      const responseData: T = await response.json()
+      return { success: true, data: responseData }
     } catch (error) {
       console.error("FormData POST request failed:", error)
-      throw error
+      return { success: false, error }
     }
   }
 
@@ -159,7 +180,7 @@ export class ApiClient {
     price_per_hour: string | number
     description: string
     photos?: File[]
-  }): Promise<any> {
+  }): Promise<{ success: boolean; data?: any; error?: any }> {
     const formData = new FormData()
 
     console.log(data)

@@ -10,6 +10,7 @@ import { Button } from "@/components/shadcn/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/shadcn/card"
 import { Input } from "@/components/shadcn/input"
 import { SimpleLabel } from "@/components/shadcn/simple-label"
+import { ApiClient } from "@/lib/api-client"
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("")
@@ -33,29 +34,20 @@ export default function ForgotPasswordPage() {
       // This helps prevent flashing by ensuring the loading state has time to render
       await new Promise((resolve) => setTimeout(resolve, 300))
 
-      // Replace with your actual API endpoint
-      const response = await fetch("http://localhost:8000/api/auth/forgot-password/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email }),
-      })
+      const result = await ApiClient.post("/api/auth/forgot-password/", { email })
 
-      // Add another small delay before showing success/error
-      await new Promise((resolve) => setTimeout(resolve, 200))
-
-      if (response.ok) {
+      if (result.success) {
+        await new Promise((resolve) => setTimeout(resolve, 200))
         setStatus("success")
         setMessage("Password reset instructions have been sent to your email")
       } else {
-        const data = await response.json().catch(() => ({}))
+        await new Promise((resolve) => setTimeout(resolve, 200))
         setStatus("error")
-        setMessage(data.message || "Failed to send password reset email. Please try again.")
+        setMessage(result.error?.message || "An error occurred. Please try again later.")
       }
-    } catch (error) {
+    } catch (error: any) {
       setStatus("error")
-      setMessage("An error occurred. Please try again later.")
+      setMessage("An unexpected error occurred. Please try again later.")
     }
   }
 

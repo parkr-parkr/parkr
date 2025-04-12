@@ -11,6 +11,7 @@ import { useToast } from "@/components/shadcn/toast-context"
 
 // Add this import at the top of your file
 import { getCookie } from "@/lib/csrf"
+import { ApiClient } from "@/lib/api-client"
 
 export default function BecomeHostPage() {
   const { user } = useAuth()
@@ -32,31 +33,9 @@ export default function BecomeHostPage() {
       // Get CSRF token from cookies
       let csrfToken = getCookie("csrftoken")
 
-      // If no CSRF token exists, make a GET request to get one
-      if (!csrfToken) {
-        try {
-          await fetch("http://localhost:8000/api/auth/profile/", {
-            method: "GET",
-            credentials: "include",
-          })
-          csrfToken = getCookie("csrftoken")
-        } catch (error) {
-          console.error("Error fetching CSRF token:", error)
-        }
-      }
-
-      // Make the request to the Django backend with CSRF token
-      const response = await fetch("http://localhost:8000/api/auth/become-host/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken": csrfToken || "",
-          "X-Requested-With": "XMLHttpRequest",
-        },
-        credentials: "include",
-      })
-
-      if (response.ok) {
+      const result = await ApiClient.post("/api/auth/become-host/", {})
+      if (result.success) {
+        // Handle success
         setIsSuccess(true)
         toast({
           title: "Success!",
@@ -68,34 +47,8 @@ export default function BecomeHostPage() {
           router.push("/dashboard/list-driveway")
         }, 1500)
       } else {
-        // Try fallback endpoint if the first one fails
-        try {
-          const fallbackResponse = await fetch("http://localhost:8000/api/places/request-listing-permission/", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "X-CSRFToken": csrfToken || "",
-              "X-Requested-With": "XMLHttpRequest",
-            },
-            credentials: "include",
-          })
-
-          if (fallbackResponse.ok) {
-            setIsSuccess(true)
-            toast({
-              title: "Success!",
-              description: "You are now a host and can list your driveway.",
-            })
-
-            setTimeout(() => {
-              router.push("/dashboard/list-driveway")
-            }, 1500)
-            return
-          }
-        } catch (fallbackError) {
-          console.error("Fallback request failed:", fallbackError)
-        }
-
+        // Handle failure
+        console.error("Request failed:", result.error)
         toast({
           title: "Error",
           description: "Failed to become a host. Please try again.",
@@ -103,6 +56,7 @@ export default function BecomeHostPage() {
         })
       }
     } catch (error) {
+      // Handle any unexpected errors
       console.error("Error becoming a host:", error)
       toast({
         title: "Error",

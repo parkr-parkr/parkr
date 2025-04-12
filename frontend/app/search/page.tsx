@@ -143,11 +143,16 @@ export default function SearchPage() {
 
     // Make API call to fetch parking spots
     if (locationData) {
-      ApiClient.get(
+      // Can we use await here AI!
+      ApiClient.get<ParkingSpot[]>(
         `/api/places/get-listings-by-location/?latitude=${locationData.latitude}&longitude=${locationData.longitude}&latitude_range=0.25&longitude_range=0.25`,
       )
         .then((response) => {
-          setSearchResults(response as any) // Type casting to 'any' to avoid type errors
+          if (response.success && response.data) {
+            setSearchResults(response.data)
+          } else {
+            console.error("Error fetching parking spots:", response.error)
+          }
         })
         .catch((error) => {
           console.error("Error fetching parking spots:", error)

@@ -71,7 +71,6 @@ def list_driveway(request):
             elif key != 'is_active':
                 data[key] = value
 
-        # Fill out necessary data with address
         AddressParser.fill_address_data(data)
 
         data = LocationParser.parse_location(data)

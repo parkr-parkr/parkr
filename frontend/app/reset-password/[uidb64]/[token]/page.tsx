@@ -10,6 +10,7 @@ import { Button } from "@/components/shadcn/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/shadcn/card"
 import { Input } from "@/components/shadcn/input"
 import { SimpleLabel } from "@/components/shadcn/simple-label"
+import { ApiClient } from "@/lib/api-client"
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState("")
@@ -78,28 +79,20 @@ export default function ResetPasswordPage() {
       // Add a small delay to ensure the loading state is visible
       await new Promise((resolve) => setTimeout(resolve, 300))
 
-      // Replace with your actual API endpoint
-      const response = await fetch("http://localhost:8000/api/auth/reset-password/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ uidb64, token, password }),
-      })
+      const result = await ApiClient.post("/api/auth/reset-password/", { uidb64, token, password })
 
-      // Add another small delay before showing success/error
-      await new Promise((resolve) => setTimeout(resolve, 200))
-
-      if (response.ok) {
+      if (result.success) {
+        await new Promise((resolve) => setTimeout(resolve, 200))
         setStatus("success")
         setMessage("Your password has been reset successfully")
       } else {
-        const data = await response.json().catch(() => ({}))
+        await new Promise((resolve) => setTimeout(resolve, 200))
         setStatus("error")
-        setMessage(data.message || "Failed to reset password. Please try again.")
+        setMessage(result.error?.message || "Failed to reset password. Please try again.")
       }
-    } catch (error) {
+    } catch (error: any) {
       setStatus("error")
+      console.log(error)
       setMessage("An error occurred. Please try again later.")
     }
   }
