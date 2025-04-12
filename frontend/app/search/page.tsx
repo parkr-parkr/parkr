@@ -1,15 +1,16 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
-import { CarFront, Search, Filter, Star, MapPin, AlertCircle } from "lucide-react"
+import { Search, Filter, Star, MapPin, AlertCircle } from "lucide-react"
 import { Button } from "@/components/shadcn/button"
 import { Card, CardContent } from "@/components/shadcn/card"
 import { LocationSearch, type Prediction } from "@/components/features/location-search"
 import { DatePickerWithRange } from "@/components/features/date-picker-with-range"
 import { ApiClient } from "@/lib/api-client"
 import type { DateRange } from "react-day-picker"
+import { useAuth } from "@/components/providers/auth-provider"
+import { NavBar } from "@/components/features/nav-bar"
 
 // Define the ParkingSpot interface based on the provided contract
 interface ParkingSpotImage {
@@ -47,6 +48,7 @@ export default function SearchPage() {
   const [isTyping, setIsTyping] = useState(false)
   const [hasSelectedLocation, setHasSelectedLocation] = useState(false)
   const [initialSearchDone, setInitialSearchDone] = useState(false)
+  const { user, isLoading, logout } = useAuth()
 
   // Create a state to force re-render of the LocationSearch component
   const [locationKey, setLocationKey] = useState(Date.now())
@@ -190,29 +192,13 @@ export default function SearchPage() {
   // Check if search button should be disabled
   const isSearchDisabled = isSearching || !locationData || isTyping || !hasSelectedLocation
 
+  const handleLogout = async () => {
+    await logout()
+  }
+
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container max-w-6xl mx-auto flex h-16 items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Link href="/" className="flex items-center gap-2">
-              <CarFront className="h-6 w-6 text-primary" />
-              <span className="text-xl font-bold">ParkShare</span>
-            </Link>
-          </div>
-          <nav className="flex items-center gap-4">
-            <Link href="/dashboard" className="text-sm font-medium hover:text-primary">
-              Dashboard
-            </Link>
-            <Link href="/dashboard/list-driveway" className="text-sm font-medium hover:text-primary">
-              List Your Driveway
-            </Link>
-            <Link href="/login" className="text-sm font-medium hover:text-primary">
-              Sign In
-            </Link>
-          </nav>
-        </div>
-      </header>
+      <NavBar showListDriveway={false} navItems={[]} />
 
       <main className="flex-1">
         <section className="bg-primary/5 py-8">

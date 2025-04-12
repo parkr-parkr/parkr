@@ -1,20 +1,9 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import {
-  CalendarIcon,
-  CarFront,
-  MapPin,
-  Search,
-  CheckCircle2,
-  DollarSign,
-  Clock,
-  ParkingCircle,
-  User,
-  LogOut,
-} from "lucide-react"
+import { CalendarIcon, CarFront, MapPin, Search, CheckCircle2, DollarSign, Clock, ParkingCircle } from "lucide-react"
 
 import { Button } from "@/components/shadcn/button"
 import { Separator } from "@/components/shadcn/separator"
@@ -22,6 +11,7 @@ import { DatePickerWithRange } from "@/components/features/date-picker-with-rang
 import { LocationSearch, type Prediction } from "@/components/features/location-search"
 import { useAuth } from "@/components/providers/auth-provider"
 import { ListDrivewayButton } from "@/components/features/list-driveway-button"
+import { NavBar } from "@/components/features/nav-bar"
 import type { DateRange } from "react-day-picker"
 
 export default function Home() {
@@ -32,9 +22,8 @@ export default function Home() {
     from: new Date(),
     to: new Date(new Date().setDate(new Date().getDate() + 2)),
   })
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const menuRef = useRef<HTMLDivElement>(null)
 
+  // Update the handleSearch function to properly serialize the location data
   const handleSearch = () => {
     if (!selectedLocation) {
       alert("Please select a location")
@@ -48,6 +37,8 @@ export default function Home() {
     params.append("lat", selectedLocation.latitude)
     params.append("lng", selectedLocation.longitude)
     params.append("address", selectedLocation.formattedAddress)
+    params.append("place_id", selectedLocation.place_id)
+    params.append("displayName", selectedLocation.displayName)
 
     // Add date range parameters
     if (dateRange?.from) {
@@ -62,124 +53,16 @@ export default function Home() {
     router.push(`/search?${params.toString()}`)
   }
 
-  const handleLogout = async () => {
-    await logout()
-    setIsMenuOpen(false)
-  }
-
-  // Close menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setIsMenuOpen(false)
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside)
-    }
-  }, [])
-
   return (
     <div className="flex min-h-screen flex-col">
-      {/* Add the client component that prevents text editing */}
+      <NavBar
+        showListDriveway={true}
+        navItems={[
+          { label: "How It Works", href: "#" },
+          { label: "Help", href: "#" },
+        ]}
+      />
 
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        {/* Header content */}
-        <div className="container max-w-6xl mx-auto flex h-16 items-center justify-between">
-          <div className="flex items-center gap-2">
-            <CarFront className="h-6 w-6 text-primary" />
-            <span className="text-xl font-bold">ParkShare</span>
-          </div>
-          <nav className="hidden md:flex items-center gap-6">
-            {/* Replace the Link with ListDrivewayButton */}
-            <ListDrivewayButton variant="ghost" className="text-sm font-medium hover:underline underline-offset-4" />
-
-            <Link href="#" className="text-sm font-medium hover:underline underline-offset-4">
-              How It Works
-            </Link>
-            <Link href="#" className="text-sm font-medium hover:underline underline-offset-4">
-              Help
-            </Link>
-          </nav>
-          <div className="flex items-center gap-4">
-            {isLoading ? (
-              // Show loading skeleton
-              <div className="h-10 w-20 animate-pulse rounded bg-muted"></div>
-            ) : user ? (
-              // User is logged in - show profile dropdown
-              <div className="relative" ref={menuRef}>
-                <button
-                  onClick={() => setIsMenuOpen(!isMenuOpen)}
-                  className="flex items-center justify-center h-10 w-10 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
-                >
-                  {user.first_name?.[0]}
-                  {user.last_name?.[0]}
-                </button>
-
-                {isMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
-                    <div className="py-1">
-                      <div className="px-4 py-2 border-b">
-                        <p className="text-sm font-medium">{user.full_name || user.username}</p>
-                        <p className="text-xs text-muted-foreground truncate">{user.email}</p>
-                      </div>
-
-                      <Link
-                        href="/profile"
-                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        <User className="mr-2 h-4 w-4" />
-                        <span>Profile</span>
-                      </Link>
-
-                      <Link
-                        href="/dashboard"
-                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        <MapPin className="mr-2 h-4 w-4" />
-                        <span>My Bookings</span>
-                      </Link>
-
-                      <Link
-                        href="/my-listings"
-                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        <ParkingCircle className="mr-2 h-4 w-4" />
-                        <span>My Listings</span>
-                      </Link>
-
-                      <button
-                        onClick={handleLogout}
-                        className="flex w-full items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      >
-                        <LogOut className="mr-2 h-4 w-4" />
-                        <span>Log out</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              // User is not logged in - show login/signup buttons
-              <>
-                <Link href="/signup" className="hidden md:block text-sm font-medium hover:underline underline-offset-4">
-                  Sign Up
-                </Link>
-                <Button asChild>
-                  <Link href="/login">Log In</Link>
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
-      </header>
-
-      {/* Rest of your component remains the same */}
       <main className="flex-1">
         <section className="relative">
           <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-primary/5 z-10" />
