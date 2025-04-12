@@ -52,38 +52,38 @@ export default function BecomeHostPage() {
         async (error: any) => {
           // Try fallback endpoint if the first one fails
           try {
-            // Use api client below AI!
-            const fallbackResponse = await fetch("http://localhost:8000/api/places/request-listing-permission/", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "X-CSRFToken": csrfToken || "",
-                "X-Requested-With": "XMLHttpRequest",
+            ApiClient.post(
+              "/api/places/request-listing-permission/",
+              {},
+              async () => {
+                setIsSuccess(true)
+                toast({
+                  title: "Success!",
+                  description: "You are now a host and can list your driveway.",
+                })
+
+                setTimeout(() => {
+                  router.push("/dashboard/list-driveway")
+                }, 1500)
+                return
               },
-              credentials: "include",
+              async (fallbackError: any) => {
+                console.error("Fallback request failed:", fallbackError)
+                toast({
+                  title: "Error",
+                  description: "Failed to become a host. Please try again.",
+                  variant: "destructive",
+                })
+              },
+            )
+          } catch (error) {
+            console.error("Fallback request failed:", error)
+            toast({
+              title: "Error",
+              description: "Failed to become a host. Please try again.",
+              variant: "destructive",
             })
-
-            if (fallbackResponse.ok) {
-              setIsSuccess(true)
-              toast({
-                title: "Success!",
-                description: "You are now a host and can list your driveway.",
-              })
-
-              setTimeout(() => {
-                router.push("/dashboard/list-driveway")
-              }, 1500)
-              return
-            }
-          } catch (fallbackError) {
-            console.error("Fallback request failed:", fallbackError)
           }
-
-          toast({
-            title: "Error",
-            description: "Failed to become a host. Please try again.",
-            variant: "destructive",
-          })
         },
       )
     } catch (error) {
