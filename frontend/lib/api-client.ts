@@ -21,6 +21,8 @@ export class ApiClient {
     return response.json()
   }
 
+
+  // All these below methods should take in an onSuccess and onError handler AI!
   /**
    * Make a POST request with JSON data
    */
