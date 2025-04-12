@@ -25,7 +25,7 @@ def get_places_by_location(request):
     longitude_range = request.query_params.get('longitude_range', None)
 
     if not latitude or not longitude or not latitude_range or not longitude_range:
-        return Response({"error": "Latitude, longitude, latitude_range, and longitude_range are required."}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": "Latitudes, longitude, latitude_range, and longitude_range are required."}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
         latitude = float(latitude)
