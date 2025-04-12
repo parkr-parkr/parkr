@@ -90,6 +90,7 @@ def list_driveway(request):
             elif key != 'is_active':
                 data[key] = value
 
+        # Create an additional method that fills out necessary data with address AI!
         # Parse the address into components
         address_string = data.get('address', '')
         address, city, state, zip_code = _parse_address(address_string)
