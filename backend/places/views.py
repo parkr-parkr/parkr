@@ -73,7 +73,8 @@ def list_driveway(request):
         # Fill out necessary data with address
         AddressParser.fill_address_data(data)
 
-        # We should factor this out into a reusable method, in a location util file #AI
+
+        # Refactor this into a utility method AI!
         if 'latitude' in data and data['latitude']:
             data['latitude'] = round(float(data['latitude']), 6)
         if 'longitude' in data and data['longitude']:
