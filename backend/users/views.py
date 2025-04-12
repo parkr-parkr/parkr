@@ -27,7 +27,6 @@ from datetime import timedelta
 
 User = get_user_model()
 
-# Set up logging
 logger = logging.getLogger(__name__)
 
 
