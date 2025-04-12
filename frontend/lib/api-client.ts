@@ -8,7 +8,6 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:800
  */
 export class ApiClient {
 
-  // Modify the below methods to return a result that indicates if there was a success or failure instead of the onSuccess and onError callbacks  Update any dependents who use the callback structure AI!
   /**
    * Make a GET request
    */
@@ -28,9 +27,7 @@ export class ApiClient {
   static async post<T>(
     endpoint: string,
     data?: any,
-    onSuccess?: (data: T) => void,
-    onError?: (error: any) => void,
-  ): Promise<T | void> {
+  ): Promise<{ success: boolean; data?: T; error?: any }> {
     const url = `${BACKEND_URL}${endpoint}`
 
     try {
@@ -44,11 +41,10 @@ export class ApiClient {
       }
 
       const responseData: T = await response.json()
-      onSuccess?.(responseData)
-      return responseData
+      return { success: true, data: responseData }
     } catch (error) {
       console.error("POST request failed:", error)
-      onError?.(error)
+      return { success: false, error }
     }
   }
 
@@ -58,9 +54,7 @@ export class ApiClient {
   static async put<T>(
     endpoint: string,
     data?: any,
-    onSuccess?: (data: T) => void,
-    onError?: (error: any) => void,
-  ): Promise<T | void> {
+  ): Promise<{ success: boolean; data?: T; error?: any }> {
     const url = `${BACKEND_URL}${endpoint}`
 
     try {
@@ -74,11 +68,10 @@ export class ApiClient {
       }
 
       const responseData: T = await response.json()
-      onSuccess?.(responseData)
-      return responseData
+      return { success: true, data: responseData }
     } catch (error) {
       console.error("PUT request failed:", error)
-      onError?.(error)
+      return { success: false, error }
     }
   }
 
@@ -88,9 +81,7 @@ export class ApiClient {
   static async patch<T>(
     endpoint: string,
     data?: any,
-    onSuccess?: (data: T) => void,
-    onError?: (error: any) => void,
-  ): Promise<T | void> {
+  ): Promise<{ success: boolean; data?: T; error?: any }> {
     const url = `${BACKEND_URL}${endpoint}`
 
     try {
@@ -104,11 +95,10 @@ export class ApiClient {
       }
 
       const responseData: T = await response.json()
-      onSuccess?.(responseData)
-      return responseData
+      return { success: true, data: responseData }
     } catch (error) {
       console.error("PATCH request failed:", error)
-      onError?.(error)
+      return { success: false, error }
     }
   }
 
@@ -117,9 +107,7 @@ export class ApiClient {
    */
   static async delete<T>(
     endpoint: string,
-    onSuccess?: (data: T) => void,
-    onError?: (error: any) => void,
-  ): Promise<T | void> {
+  ): Promise<{ success: boolean; data?: T; error?: any }> {
     const url = `${BACKEND_URL}${endpoint}`
 
     try {
@@ -132,18 +120,17 @@ export class ApiClient {
       }
 
       const responseData: T = await response.json()
-      onSuccess?.(responseData)
-      return responseData
+      return { success: true, data: responseData }
     } catch (error) {
       console.error("DELETE request failed:", error)
-      onError?.(error)
+      return { success: false, error }
     }
   }
-
+  // Modify the below methods to return a result that indicates if there was a success or failure instead of the onSuccess and onError callbacks  Update any dependents who use the callback structure AI!
   /**
    * Make a POST request with FormData (for file uploads)
    */
-  static async postFormData<T>(endpoint: string, formData: FormData): Promise<T> {
+  static async postFormData<T>(endpoint: string, formData: FormData): Promise<{ success: boolean; data?: T; error?: any }> {
     const url = `${BACKEND_URL}${endpoint}`
 
     console.log("Posting form data to:", url)
@@ -169,10 +156,11 @@ export class ApiClient {
         await this.handleErrorResponse(response)
       }
 
-      return response.json()
+      const responseData: T = await response.json()
+      return { success: true, data: responseData }
     } catch (error) {
       console.error("FormData POST request failed:", error)
-      throw error
+      return { success: false, error }
     }
   }
 
@@ -187,7 +175,7 @@ export class ApiClient {
     price_per_hour: string | number
     description: string
     photos?: File[]
-  }): Promise<any> {
+  }): Promise<{ success: boolean; data?: any; error?: any }> {
     const formData = new FormData()
 
     console.log(data)
