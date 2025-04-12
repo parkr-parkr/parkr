@@ -70,6 +70,7 @@ def list_driveway(request):
                 data[key] = value
 
         # Create serializer with the clean data
+        # Can we refactor this method to create a copy of data AI!
         address = data.get('address', '')
         parts = address.split(',')
         if len(parts) >= 3:
