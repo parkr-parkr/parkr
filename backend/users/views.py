@@ -417,17 +417,13 @@ class VerifyAndLoginView(APIView):
             verification_token.delete()
             
             refresh = RefreshToken.for_user(user)
+            serialized_user = UserProfileSerializer(user).data
             
             return Response({
                 "message": "Email verified successfully and logged in.",
                 "token": str(refresh.access_token),
                 "refresh": str(refresh),
-                "user": {
-                    "id": user.id,
-                    "email": user.email,
-                    "name": user.name if hasattr(user, 'name') else "",
-                    "is_verified": True
-                }
+                "user": serialized_user
             }, status=status.HTTP_200_OK)
             
         except VerificationToken.DoesNotExist:
