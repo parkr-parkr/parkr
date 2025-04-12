@@ -2,13 +2,17 @@ name: Django Tests
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ '*' ]
   pull_request:
-    branches: [ main, develop ]
+    branches: [ 'master', 'develop' ]
+  workflow_dispatch:
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend  # Set the default working directory to backend
     
     steps:
     - uses: actions/checkout@v3
@@ -22,7 +26,7 @@ jobs:
       uses: actions/cache@v3
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
         restore-keys: |
           ${{ runner.os }}-pip-
     
@@ -43,10 +47,4 @@ jobs:
       env:
         DJANGO_SETTINGS_MODULE: config.test_settings
       run: |
-        pytest users/tests/ --cov=users --cov-report=xml --cov-report=term
-    
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
-      with:
-        file: ./coverage.xml
-        fail_ci_if_error: true
+        pytest -v
