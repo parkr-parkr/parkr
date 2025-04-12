@@ -79,7 +79,6 @@ export default function ResetPasswordPage() {
       // Add a small delay to ensure the loading state is visible
       await new Promise((resolve) => setTimeout(resolve, 300))
 
-      // ApiClient was updated to not use callback but return a success failure object update caccordingly AI!
       const result = await ApiClient.post("/api/auth/reset-password/", { uidb64, token, password })
 
       if (result.success) {
