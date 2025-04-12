@@ -34,6 +34,7 @@ export default function ForgotPasswordPage() {
       // This helps prevent flashing by ensuring the loading state has time to render
       await new Promise((resolve) => setTimeout(resolve, 300))
 
+            // ApiClient was updated to not use callback but return a success failure object update caccordingly AI!
       ApiClient.post(
         "/api/auth/forgot-password/",
         { email },
