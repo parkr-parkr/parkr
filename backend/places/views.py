@@ -147,6 +147,7 @@ def listing(request, listing_id):
         elif request.method == 'PATCH':
             data = request.data
             AddressParser.fill_address_data(data)
+            data = LocationParser.parse_location(data)
             serializer = PlaceSerializer(listing_obj, data=data, partial=True)
             if serializer.is_valid():
                 serializer.save()

@@ -45,6 +45,74 @@ export class ApiClient {
   }
 
   /**
+   * Make a PUT request with JSON data
+   */
+  static async put<T>(endpoint: string, data?: any): Promise<T> {
+    const url = `${BACKEND_URL}${endpoint}`
+
+    try {
+      const response = await fetchWithCsrf(url, {
+        method: "PUT",
+        body: data ? JSON.stringify(data) : undefined,
+      })
+
+      if (!response.ok) {
+        await this.handleErrorResponse(response)
+      }
+
+      return response.json()
+    } catch (error) {
+      console.error("PUT request failed:", error)
+      throw error
+    }
+  }
+
+  /**
+   * Make a PATCH request with JSON data
+   */
+  static async patch<T>(endpoint: string, data?: any): Promise<T> {
+    const url = `${BACKEND_URL}${endpoint}`
+
+    try {
+      const response = await fetchWithCsrf(url, {
+        method: "PATCH",
+        body: data ? JSON.stringify(data) : undefined,
+      })
+
+      if (!response.ok) {
+        await this.handleErrorResponse(response)
+      }
+
+      return response.json()
+    } catch (error) {
+      console.error("PATCH request failed:", error)
+      throw error
+    }
+  }
+
+  /**
+   * Make a DELETE request
+   */
+  static async delete<T>(endpoint: string): Promise<T> {
+    const url = `${BACKEND_URL}${endpoint}`
+
+    try {
+      const response = await fetchWithCsrf(url, {
+        method: "DELETE",
+      })
+
+      if (!response.ok) {
+        await this.handleErrorResponse(response)
+      }
+
+      return response.json()
+    } catch (error) {
+      console.error("DELETE request failed:", error)
+      throw error
+    }
+  }
+
+  /**
    * Make a POST request with FormData (for file uploads)
    */
   static async postFormData<T>(endpoint: string, formData: FormData): Promise<T> {
@@ -82,8 +150,8 @@ export class ApiClient {
 
   /**
    * List a driveway
-*/
-static async listDriveway(data: {
+   */
+  static async listDriveway(data: {
     name: string
     address: string
     latitude: string
@@ -158,6 +226,24 @@ static async listDriveway(data: {
   }
 
   /**
+   * Update a listing
+   */
+  static async updateListing(
+    id: number,
+    data: {
+      name: string
+      address: string
+      latitude: string
+      longitude: string
+      price_per_hour: string | number
+      description?: string
+    },
+  ): Promise<any> {
+    // Using PATCH instead of POST or PUT as requested
+    return ApiClient.patch(`/api/places/listings/${id}/`, data)
+  }
+
+  /**
    * Handle error responses with detailed logging
    */
   private static async handleErrorResponse(response: Response): Promise<never> {
@@ -191,4 +277,3 @@ static async listDriveway(data: {
     throw new Error(errorMessage)
   }
 }
-
