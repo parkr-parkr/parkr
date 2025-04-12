@@ -17,6 +17,7 @@ export function ResendVerification({ email }: ResendVerificationProps) {
     setMessage(null)
     setError(null)
 
+    // Use api client ts below AI!
     try {
       const response = await fetch("http://localhost:8000/api/auth/resend-verification/", {
         method: "POST",
