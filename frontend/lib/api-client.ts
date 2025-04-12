@@ -30,7 +30,7 @@ export class ApiClient {
   /**
    * Make a POST request with JSON data
    */
-  static async post<T>(
+static async post<T>(
     endpoint: string,
     data?: any,
   ): Promise<{ success: boolean; data?: T; error?: any }> {

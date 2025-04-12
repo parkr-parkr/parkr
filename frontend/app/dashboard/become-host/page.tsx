@@ -33,60 +33,30 @@ export default function BecomeHostPage() {
       // Get CSRF token from cookies
       let csrfToken = getCookie("csrftoken")
 
-      // Make the request to the Django backend with CSRF token
-      ApiClient.post(
-        "/api/auth/become-host/",
-        {},
-        async () => {
-          setIsSuccess(true)
-          toast({
-            title: "Success!",
-            description: "You are now a host and can list your driveway.",
-          })
+      const result = await ApiClient.post("/api/auth/become-host/", {})
+      if (result.success) {
+        // Handle success
+        setIsSuccess(true)
+        toast({
+          title: "Success!",
+          description: "You are now a host and can list your driveway.",
+        })
 
-          // Redirect to the list-driveway page after a short delay
-          setTimeout(() => {
-            router.push("/dashboard/list-driveway")
-          }, 1500)
-        },
-        async (error: any) => {
-          // Try fallback endpoint if the first one fails
-          try {
-            ApiClient.post(
-              "/api/places/request-listing-permission/",
-              {},
-              async () => {
-                setIsSuccess(true)
-                toast({
-                  title: "Success!",
-                  description: "You are now a host and can list your driveway.",
-                })
-
-                setTimeout(() => {
-                  router.push("/dashboard/list-driveway")
-                }, 1500)
-                return
-              },
-              async (fallbackError: any) => {
-                console.error("Fallback request failed:", fallbackError)
-                toast({
-                  title: "Error",
-                  description: "Failed to become a host. Please try again.",
-                  variant: "destructive",
-                })
-              },
-            )
-          } catch (error) {
-            console.error("Fallback request failed:", error)
-            toast({
-              title: "Error",
-              description: "Failed to become a host. Please try again.",
-              variant: "destructive",
-            })
-          }
-        },
-      )
+        // Redirect to the list-driveway page after a short delay
+        setTimeout(() => {
+          router.push("/dashboard/list-driveway")
+        }, 1500)
+      } else {
+        // Handle failure
+        console.error("Request failed:", result.error)
+        toast({
+          title: "Error",
+          description: "Failed to become a host. Please try again.",
+          variant: "destructive",
+        })
+      }
     } catch (error) {
+      // Handle any unexpected errors
       console.error("Error becoming a host:", error)
       toast({
         title: "Error",

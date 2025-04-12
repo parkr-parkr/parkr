@@ -2,7 +2,7 @@
  * Utility functions for handling CSRF tokens in fetch requests
  */
 
-import { useAuth } from "@/components/providers/auth-provider"
+import { checkBackendStatus, useAuth } from "@/components/providers/auth-provider"
 
 // Helper function to get a cookie value by name
 export function getCookie(name: string): string | undefined {
@@ -20,9 +20,8 @@ export async function fetchWithCsrf(url: string, options: RequestInit = {}): Pro
   let csrfToken = getCookie("csrftoken")
 
   // If no CSRF token exists, make a GET request to get one
-  // The below should use the AuthProvider.ts checkbackendstatus to fetch csrf token AI!
   if (!csrfToken) {
-    console.error("CSRF token not found in cookies")
+    checkBackendStatus()
   }
   // Create a new options object to avoid modifying the original
   const fetchOptions: RequestInit = {
