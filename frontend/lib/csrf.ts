@@ -18,6 +18,7 @@ export async function fetchWithCsrf(url: string, options: RequestInit = {}): Pro
   let csrfToken = getCookie("csrftoken")
 
   // If no CSRF token exists, make a GET request to get one
+  // The below should use the AuthProvider.ts checkbackendstatus to fetch csrf token AI!
   if (!csrfToken) {
     try {
       await fetch("http://localhost:8000/api/auth/profile/", {
