@@ -60,6 +60,7 @@ export default function MyListingsPage() {
     setError(null)
 
     try {
+      // Update line 64 to api-client.ts. ApiClient.get() AI!
       const response = await fetchWithCsrf("http://localhost:8000/api/places/my-listings/")
 
       if (!response.ok) {
