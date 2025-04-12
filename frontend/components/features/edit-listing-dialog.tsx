@@ -56,6 +56,12 @@ export function EditListingDialog({ open, onOpenChange, listing, onListingUpdate
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState<Partial<ParkingSpot>>({})
   const [locationData, setLocationData] = useState<Prediction | null>(null)
+  const [errors, setErrors] = useState<{
+    name?: string
+    address?: string
+    price_per_hour?: string
+    description?: string
+  }>({})
 
   // Reset form data when listing changes
   useEffect(() => {
@@ -72,7 +78,7 @@ export function EditListingDialog({ open, onOpenChange, listing, onListingUpdate
         setLocationData({
           latitude: listing.latitude,
           longitude: listing.longitude,
-          formattedAddress: listing.address,
+          formattedAddress: `${listing.address}, ${listing.city}, ${listing.state} ${listing.zip_code}`,
           displayName: listing.name,
           place_id: `listing-${listing.id}`,
         })
@@ -86,6 +92,24 @@ export function EditListingDialog({ open, onOpenChange, listing, onListingUpdate
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target
     setFormData((prev) => ({ ...prev, [id]: value }))
+
+    // Clear error when field is edited
+    if (errors[id as keyof typeof errors]) {
+      setErrors((prev) => ({ ...prev, [id]: undefined }))
+    }
+
+    // Validate specific fields
+    if (id === "name" && value.trim() === "") {
+      setErrors((prev) => ({ ...prev, name: "Listing name is required" }))
+    }
+
+    if (id === "price_per_hour") {
+      if (value === "") {
+        setErrors((prev) => ({ ...prev, price_per_hour: "Price is required" }))
+      } else if (isNaN(Number(value)) || Number(value) <= 0) {
+        setErrors((prev) => ({ ...prev, price_per_hour: "Price must be a positive number" }))
+      }
+    }
   }
 
   // Handle location selection
@@ -95,6 +119,11 @@ export function EditListingDialog({ open, onOpenChange, listing, onListingUpdate
       ...prev,
       address: prediction.formattedAddress,
     }))
+
+    // Clear address error when location is selected
+    if (errors.address) {
+      setErrors((prev) => ({ ...prev, address: undefined }))
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -102,20 +131,32 @@ export function EditListingDialog({ open, onOpenChange, listing, onListingUpdate
 
     if (!listing) return
 
+    // Validate all fields
+    const newErrors: typeof errors = {}
+
+    if (!formData.name || formData.name.trim() === "") {
+      newErrors.name = "Listing name is required"
+    }
+
+    if (!locationData) {
+      newErrors.address = "Please select a valid address"
+    }
+
+    if (!formData.price_per_hour) {
+      newErrors.price_per_hour = "Price is required"
+    } else if (isNaN(Number(formData.price_per_hour)) || Number(formData.price_per_hour) <= 0) {
+      newErrors.price_per_hour = "Price must be a positive number"
+    }
+
+    // If there are validation errors, show them and stop submission
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors)
+      return
+    }
+
     setIsSubmitting(true)
 
     try {
-      // Validate form data
-      if (!formData.name || !locationData || !formData.price_per_hour) {
-        toast({
-          title: "Validation Error",
-          description: "Please fill in all required fields",
-          variant: "destructive",
-        })
-        setIsSubmitting(false)
-        return
-      }
-
       // Prepare data for API
       const updateData = {
         name: formData.name,
@@ -169,7 +210,9 @@ export function EditListingDialog({ open, onOpenChange, listing, onListingUpdate
               value={formData.name || ""}
               onChange={handleChange}
               required
+              className={errors.name ? "border-red-500" : ""}
             />
+            {errors.name && <p className="text-sm text-red-500 mt-1">{errors.name}</p>}
           </div>
 
           <div className="space-y-2">
@@ -179,6 +222,7 @@ export function EditListingDialog({ open, onOpenChange, listing, onListingUpdate
               initialValue={formData.address}
               initialPrediction={locationData || undefined}
             />
+            {errors.address && <p className="text-sm text-red-500 mt-1">{errors.address}</p>}
           </div>
 
           <div className="space-y-2">
@@ -188,13 +232,14 @@ export function EditListingDialog({ open, onOpenChange, listing, onListingUpdate
               <Input
                 id="price_per_hour"
                 min="1"
-                className="pl-10"
+                className={`pl-10 ${errors.price_per_hour ? "border-red-500" : ""}`}
                 placeholder="5.00"
                 value={formData.price_per_hour || ""}
                 onChange={handleChange}
                 required
               />
             </div>
+            {errors.price_per_hour && <p className="text-sm text-red-500 mt-1">{errors.price_per_hour}</p>}
           </div>
 
           <div className="space-y-2">
@@ -202,10 +247,11 @@ export function EditListingDialog({ open, onOpenChange, listing, onListingUpdate
             <Textarea
               id="description"
               placeholder="Describe your parking space. Include details like size, access instructions, and any restrictions."
-              className="min-h-[120px]"
+              className={`min-h-[120px] ${errors.description ? "border-red-500" : ""}`}
               value={formData.description || ""}
               onChange={handleChange}
             />
+            {errors.description && <p className="text-sm text-red-500 mt-1">{errors.description}</p>}
           </div>
 
           <DialogFooter>
