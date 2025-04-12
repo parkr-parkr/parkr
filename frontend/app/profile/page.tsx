@@ -132,11 +132,6 @@ export default function ProfilePage() {
             </div>
 
             <div className="space-y-1">
-              <h3 className="text-sm font-medium text-muted-foreground">Username</h3>
-              <p>{user.username}</p>
-            </div>
-
-            <div className="space-y-1">
               <h3 className="text-sm font-medium text-muted-foreground">Email Verification</h3>
               <p>{user.is_verified ? "Verified" : "Not verified"}</p>
             </div>
