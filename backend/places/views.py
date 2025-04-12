@@ -74,7 +74,7 @@ def list_driveway(request):
         AddressParser.fill_address_data(data)
 
 
-        # Refactor this into a utility method AI!
+        # Refactor line 78 to 81 into a LocationParser method and call it here AI!
         if 'latitude' in data and data['latitude']:
             data['latitude'] = round(float(data['latitude']), 6)
         if 'longitude' in data and data['longitude']:
