@@ -50,7 +50,6 @@ export default function SignupPage() {
 
       console.log("Sending registration data:", registrationData)
 
-      // Below should use api client ts AI!
       const result = await ApiClient.post<{ message: string }>("api/auth/register/", registrationData)
 
       if (!result.success) {
