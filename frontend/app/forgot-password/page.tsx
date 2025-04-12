@@ -34,6 +34,7 @@ export default function ForgotPasswordPage() {
       await new Promise((resolve) => setTimeout(resolve, 300))
 
       // Replace with your actual API endpoint
+      // We have an api-client.ts file. Refactor this to use the api client for consistency. AI!
       const response = await fetch("http://localhost:8000/api/auth/forgot-password/", {
         method: "POST",
         headers: {
