@@ -74,7 +74,6 @@ def list_driveway(request):
         # Fill out necessary data with address
         AddressParser.fill_address_data(data)
 
-        # Refactor line 78 to 81 into a LocationParser method and call it here AI!
         data = LocationParser.parse_location(data)
 
         serializer = PlaceSerializer(data=data, context={'request': request})
