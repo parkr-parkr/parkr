@@ -78,7 +78,7 @@ export default function ResetPasswordPage() {
       // Add a small delay to ensure the loading state is visible
       await new Promise((resolve) => setTimeout(resolve, 300))
 
-      // Replace with your actual API endpoint
+      // Below use ApiClient in api-client.ts AI!
       const response = await fetch("http://localhost:8000/api/auth/reset-password/", {
         method: "POST",
         headers: {
