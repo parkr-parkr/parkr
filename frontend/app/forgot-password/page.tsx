@@ -10,6 +10,7 @@ import { Button } from "@/components/shadcn/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/shadcn/card"
 import { Input } from "@/components/shadcn/input"
 import { SimpleLabel } from "@/components/shadcn/simple-label"
+import { ApiClient } from "@/lib/api-client"
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("")
@@ -33,6 +34,7 @@ export default function ForgotPasswordPage() {
       // This helps prevent flashing by ensuring the loading state has time to render
       await new Promise((resolve) => setTimeout(resolve, 300))
 
+      // Api Client now takes in a success and failure handler. Use that instead here AI!
       const response = await ApiClient.post("/api/auth/forgot-password/", { email })
 
       // Add another small delay before showing success/error
