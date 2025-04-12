@@ -6,7 +6,9 @@ from .serializers import PlaceSerializer, PlaceImageSerializer
 from django.db import transaction
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
-from .s3_service import s3_service  # Import the S3 service
+from .s3_service import s3_service
+from .util.address_utils import AddressParser
+from .util.location_utils import LocationParser
 import logging
 
 logger = logging.getLogger(__name__)
@@ -69,20 +71,10 @@ def list_driveway(request):
             elif key != 'is_active':
                 data[key] = value
 
-        # Create serializer with the clean data
-        address = data.get('address', '')
-        parts = address.split(',')
-        if len(parts) >= 3:
-            data['address'] = parts[0].strip()
-            data['city'] = parts[1].strip()
-            state_zip = parts[2].strip().split(' ')
-            if len(state_zip) >= 2:
-                data['state'] = state_zip[0].strip()
-                data['zip_code'] = state_zip[1].strip()
-        if 'latitude' in data and data['latitude']:
-            data['latitude'] = round(float(data['latitude']), 6)
-        if 'longitude' in data and data['longitude']:
-            data['longitude'] = round(float(data['longitude']), 6)
+        # Fill out necessary data with address
+        AddressParser.fill_address_data(data)
+
+        data = LocationParser.parse_location(data)
 
         serializer = PlaceSerializer(data=data, context={'request': request})
 
@@ -152,7 +144,10 @@ def listing(request, listing_id):
             return Response(serializer.data)
             
         elif request.method == 'PATCH':
-            serializer = PlaceSerializer(listing_obj, data=request.data, partial=True)
+            data = request.data
+            AddressParser.fill_address_data(data)
+            data = LocationParser.parse_location(data)
+            serializer = PlaceSerializer(listing_obj, data=data, partial=True)
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data)
