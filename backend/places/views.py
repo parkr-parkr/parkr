@@ -11,7 +11,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-
+# For the parse address and fill address data. Refactor into a utility class AI!
 def _parse_address(address_string):
     """
     Parses an address string into its components (address, city, state, zip_code).
