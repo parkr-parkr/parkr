@@ -10,6 +10,7 @@ import { Button } from "@/components/shadcn/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/shadcn/card"
 import { Input } from "@/components/shadcn/input"
 import { SimpleLabel } from "@/components/shadcn/simple-label"
+import { ApiClient } from "@/lib/api-client"
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState("")
@@ -78,6 +79,7 @@ export default function ResetPasswordPage() {
       // Add a small delay to ensure the loading state is visible
       await new Promise((resolve) => setTimeout(resolve, 300))
 
+            // ApiClient was updated to not use callback but return a success failure object update caccordingly AI!
       ApiClient.post(
         "/api/auth/reset-password/",
         { uidb64, token, password },
@@ -94,6 +96,7 @@ export default function ResetPasswordPage() {
       )
     } catch (error) {
       setStatus("error")
+      console.log(error)
       setMessage("An error occurred. Please try again later.")
     }
   }
