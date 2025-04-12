@@ -33,63 +33,57 @@ export default function BecomeHostPage() {
       let csrfToken = getCookie("csrftoken")
 
       // Make the request to the Django backend with CSRF token
-      // Use api client in below call AI!
-      const response = await fetch("http://localhost:8000/api/auth/become-host/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken": csrfToken || "",
-          "X-Requested-With": "XMLHttpRequest",
-        },
-        credentials: "include",
-      })
-
-      if (response.ok) {
-        setIsSuccess(true)
-        toast({
-          title: "Success!",
-          description: "You are now a host and can list your driveway.",
-        })
-
-        // Redirect to the list-driveway page after a short delay
-        setTimeout(() => {
-          router.push("/dashboard/list-driveway")
-        }, 1500)
-      } else {
-        // Try fallback endpoint if the first one fails
-        try {
-          const fallbackResponse = await fetch("http://localhost:8000/api/places/request-listing-permission/", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "X-CSRFToken": csrfToken || "",
-              "X-Requested-With": "XMLHttpRequest",
-            },
-            credentials: "include",
+      ApiClient.post(
+        "/api/auth/become-host/",
+        {},
+        async () => {
+          setIsSuccess(true)
+          toast({
+            title: "Success!",
+            description: "You are now a host and can list your driveway.",
           })
 
-          if (fallbackResponse.ok) {
-            setIsSuccess(true)
-            toast({
-              title: "Success!",
-              description: "You are now a host and can list your driveway.",
+          // Redirect to the list-driveway page after a short delay
+          setTimeout(() => {
+            router.push("/dashboard/list-driveway")
+          }, 1500)
+        },
+        async (error: any) => {
+          // Try fallback endpoint if the first one fails
+          try {
+            const fallbackResponse = await fetch("http://localhost:8000/api/places/request-listing-permission/", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": csrfToken || "",
+                "X-Requested-With": "XMLHttpRequest",
+              },
+              credentials: "include",
             })
 
-            setTimeout(() => {
-              router.push("/dashboard/list-driveway")
-            }, 1500)
-            return
-          }
-        } catch (fallbackError) {
-          console.error("Fallback request failed:", fallbackError)
-        }
+            if (fallbackResponse.ok) {
+              setIsSuccess(true)
+              toast({
+                title: "Success!",
+                description: "You are now a host and can list your driveway.",
+              })
 
-        toast({
-          title: "Error",
-          description: "Failed to become a host. Please try again.",
-          variant: "destructive",
-        })
-      }
+              setTimeout(() => {
+                router.push("/dashboard/list-driveway")
+              }, 1500)
+              return
+            }
+          } catch (fallbackError) {
+            console.error("Fallback request failed:", fallbackError)
+          }
+
+          toast({
+            title: "Error",
+            description: "Failed to become a host. Please try again.",
+            variant: "destructive",
+          })
+        },
+      )
     } catch (error) {
       console.error("Error becoming a host:", error)
       toast({
