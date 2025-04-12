@@ -32,6 +32,18 @@ def _parse_address(address_string):
 
     return address, city, state, zip_code
 
+def _fill_address_data(data):
+    """Fills in the address, city, state, and zip code from the address string."""
+    # Parse the address into components
+    address_string = data.get('address', '')
+    address, city, state, zip_code = _parse_address(address_string)
+
+    # Update the data dictionary with the parsed values
+    data['address'] = address
+    data['city'] = city
+    data['state'] = state
+    data['zip_code'] = zip_code
+
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def get_places_by_location(request):
@@ -90,16 +102,8 @@ def list_driveway(request):
             elif key != 'is_active':
                 data[key] = value
 
-        # Create an additional method that fills out necessary data with address AI!
-        # Parse the address into components
-        address_string = data.get('address', '')
-        address, city, state, zip_code = _parse_address(address_string)
-
-        # Update the data dictionary with the parsed values
-        data['address'] = address
-        data['city'] = city
-        data['state'] = state
-        data['zip_code'] = zip_code
+        # Fill out necessary data with address
+        _fill_address_data(data)
 
         if 'latitude' in data and data['latitude']:
             data['latitude'] = round(float(data['latitude']), 6)
