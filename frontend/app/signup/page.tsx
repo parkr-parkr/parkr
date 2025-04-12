@@ -50,6 +50,7 @@ export default function SignupPage() {
       console.log("Sending registration data:", registrationData)
 
       // Send data to Django backend
+      // Below should use api client ts AI!
       const response = await fetch("http://localhost:8000/api/auth/register/", {
         method: "POST",
         headers: {
