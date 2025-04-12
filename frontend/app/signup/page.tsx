@@ -11,6 +11,7 @@ import { Button } from "@/components/shadcn/button"
 import { Input } from "@/components/shadcn/input"
 import { Separator } from "@/components/shadcn/separator"
 import { PreventTextEditing } from "../page-fix"
+import { ApiClient } from "@/lib/api-client"
 
 export default function SignupPage() {
   const router = useRouter()
@@ -50,7 +51,7 @@ export default function SignupPage() {
       console.log("Sending registration data:", registrationData)
 
       // Below should use api client ts AI!
-      const result = await ApiClient.post<{ message: string }>("/auth/register/", registrationData)
+      const result = await ApiClient.post<{ message: string }>("api/auth/register/", registrationData)
 
       if (!result.success) {
         throw new Error(result.error || "Registration failed")
