@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { Loader2 } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/shadcn/card"
 import { useAuth } from "@/components/providers/auth-provider"
+import { ApiClient } from "@/lib/api-client"
 
 export default function VerifyEmailPage() {
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading")
@@ -28,6 +29,7 @@ export default function VerifyEmailPage() {
           `/auth/verify-and-login/${token}/`,
         )
 
+        // Make sure to use result below AI!
         if (response.ok) {
           const data = await response.json()
           console.log("Verification and login success data:", data)
