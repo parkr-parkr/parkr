@@ -38,15 +38,10 @@ export default function ProfilePage() {
 
     setIsDeleting(true)
     try {
-      // Call the API to delete the user account
-      // Call the below with api client ts AI!
-      const response = await fetchWithCsrf(`http://localhost:8000/api/auth/users/${user.id}/`, {
-        method: "DELETE",
-      })
+      const result = await ApiClient.delete(`/auth/users/${user.id}/`)
 
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || "Failed to delete account")
+      if (!result.success) {
+        throw new Error(result.error || "Failed to delete account")
       }
 
       // Close the dialog
