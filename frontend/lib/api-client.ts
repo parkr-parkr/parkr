@@ -132,7 +132,6 @@ export class ApiClient {
       return { success: false, error }
     }
   }
-  // Modify the below methods to return a result that indicates if there was a success or failure instead of the onSuccess and onError callbacks  Update any dependents who use the callback structure AI!
   /**
    * Make a POST request with FormData (for file uploads)
    */

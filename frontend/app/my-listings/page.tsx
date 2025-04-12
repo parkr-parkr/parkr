@@ -60,27 +60,23 @@ export default function MyListingsPage() {
     setIsLoading(true)
     setError(null)
 
-    // This doesn't need the try catch AI!
-    try {
-      const { data, success, error: apiError } = await ApiClient.get<Listing[]>("/api/places/my-listings/")
+    const { data, success, error: apiError } = await ApiClient.get<Listing[]>("/api/places/my-listings/")
 
-      if (!success) {
-        throw new Error(apiError || "Failed to fetch listings")
-      }
+    if (!success) {
+      setError(apiError || "Failed to fetch listings")
+      toast({
+        title: "Error",
+        description: "Failed to load your listings. Please try again later.",
+        variant: "destructive",
+      })
+      return
+    }
 
       const listingsData = data
 
       console.log("Listings data:", listingsData)
 
       setListings(Array.isArray(listingsData) ? listingsData : [])
-    } catch (err: any) {
-      console.error("Error fetching listings:", err)
-      setError("Failed to load your listings. Please try again later.")
-      toast({
-        title: "Error",
-        description: "Failed to load your listings. Please try again later.",
-        variant: "destructive",
-      })
     } finally {
       setIsLoading(false)
     }
