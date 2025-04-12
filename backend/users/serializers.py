@@ -4,6 +4,11 @@ from django.contrib.auth.password_validation import validate_password
 
 User = get_user_model()
 
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
+from rest_framework import serializers
+from .models import User
+
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True)
     password_confirm = serializers.CharField(write_only=True, required=False)  # Made optional
@@ -17,6 +22,17 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             'last_name': {'required': False},
             'email': {'required': True},
         }
+    
+    def validate_password(self, value):
+        """
+        Validate password using Django's password validation system.
+        """
+        try:
+            # This will use the validators defined in your settings.py
+            validate_password(value)
+        except ValidationError as e:
+            raise serializers.ValidationError(list(e.messages))
+        return value
         
     def validate(self, attrs):
         # If password_confirm is provided, validate it matches password
