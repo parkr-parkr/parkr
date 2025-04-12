@@ -18,6 +18,7 @@ export function ResendVerification({ email }: ResendVerificationProps) {
     setError(null)
 
     try {
+      // it should be api/auth AI!
       const result = await ApiClient.post<{ message: string; error: string }>(
         "/auth/resend-verification/",
         { email }
