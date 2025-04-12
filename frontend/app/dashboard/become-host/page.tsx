@@ -11,6 +11,7 @@ import { useToast } from "@/components/shadcn/toast-context"
 
 // Add this import at the top of your file
 import { getCookie } from "@/lib/csrf"
+import { ApiClient } from "@/lib/api-client"
 
 export default function BecomeHostPage() {
   const { user } = useAuth()
@@ -51,6 +52,7 @@ export default function BecomeHostPage() {
         async (error: any) => {
           // Try fallback endpoint if the first one fails
           try {
+            // Use api client below AI!
             const fallbackResponse = await fetch("http://localhost:8000/api/places/request-listing-permission/", {
               method: "POST",
               headers: {
