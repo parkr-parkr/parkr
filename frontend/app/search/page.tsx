@@ -143,20 +143,23 @@ export default function SearchPage() {
 
     // Make API call to fetch parking spots
     if (locationData) {
-      try {
-        const response = await ApiClient.get<ParkingSpot[]>(
-          `/api/places/get-listings-by-location/?latitude=${locationData.latitude}&longitude=${locationData.longitude}&latitude_range=0.25&longitude_range=0.25`,
-        )
-        if (response.success && response.data) {
-          setSearchResults(response.data)
-        } else {
-          console.error("Error fetching parking spots:", response.error)
-        }
-      } catch (error) {
-        console.error("Error fetching parking spots:", error)
-      } finally {
-        setIsSearching(false)
-      }
+      // Can we use await here AI!
+      ApiClient.get<ParkingSpot[]>(
+        `/api/places/get-listings-by-location/?latitude=${locationData.latitude}&longitude=${locationData.longitude}&latitude_range=0.25&longitude_range=0.25`,
+      )
+        .then((response) => {
+          if (response.success && response.data) {
+            setSearchResults(response.data)
+          } else {
+            console.error("Error fetching parking spots:", response.error)
+          }
+        })
+        .catch((error) => {
+          console.error("Error fetching parking spots:", error)
+        })
+        .finally(() => {
+          setIsSearching(false)
+        })
     } else {
       setIsSearching(false)
     }
