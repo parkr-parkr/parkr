@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import UserRegistrationView, UserLoginView, UserLogoutView, UserProfileView, VerifyEmailView, ForgotPasswordView, ResetPasswordView, BecomeHostView, UserDeleteView, ResendVerificationEmailView
+from .views import UserRegistrationView, UserLoginView, UserLogoutView, UserProfileView, VerifyEmailView, ForgotPasswordView, ResetPasswordView, BecomeHostView, UserDeleteView, ResendVerificationEmailView, VerifyAndLoginView
 
 urlpatterns = [
     path('register/', UserRegistrationView.as_view(), name='register'),
@@ -12,4 +12,5 @@ urlpatterns = [
     path('become-host/', BecomeHostView.as_view(), name='become-host'),
     path('users/<int:pk>/', UserDeleteView.as_view(), name='user_delete'),
     path('resend-verification/', ResendVerificationEmailView.as_view(), name='resend_verification'),
+    path('verify-and-login/<uuid:token>/', VerifyAndLoginView.as_view(), name='verify-and-login')
 ]

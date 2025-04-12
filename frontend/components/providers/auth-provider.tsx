@@ -4,8 +4,7 @@ import { createContext, useContext, useEffect, useState, useRef, type ReactNode 
 
 // Add this function at the top of your auth-provider.tsx file
 // to safely handle JSON parsing without using eval() or new Function()
-
-function safeJsonParse(text: string): any {
+function safeJsonParse(text: string) {
   try {
     return JSON.parse(text)
   } catch (e) {
@@ -23,6 +22,7 @@ type User = {
   full_name: string
   is_verified: boolean
   can_list_driveway: boolean
+  // Add other user properties as needed
 }
 
 type AuthContextType = {
@@ -34,6 +34,9 @@ type AuthContextType = {
   isBackendAvailable: boolean | null
   checkBackendStatus: () => Promise<boolean>
   checkSession: () => Promise<any>
+  // Add these new functions
+  setUserAndToken: (user: User, token: string) => void
+  loginWithToken: (token: string) => Promise<{ success: boolean; error?: string }>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -41,6 +44,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 // Use direct backend URL with trailing slashes
 const BACKEND_URL = "http://localhost:8000"
 
+// Provider component
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -107,7 +111,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       console.log("Checking authentication status...")
 
-      // Only use direct backend URL - no fallback
+      // Check for JWT token in localStorage
+      const token = localStorage.getItem("auth_token")
+      if (token) {
+        console.log("Found JWT token in localStorage, validating...")
+        // Try to validate the token
+        const response = await fetch(`${BACKEND_URL}/api/auth/profile/`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          credentials: "include",
+        })
+
+        if (response.ok) {
+          const userData = await response.json()
+          console.log("JWT token validation successful:", userData)
+          setUser(userData)
+          return userData
+        } else {
+          console.log("JWT token validation failed, removing token")
+          localStorage.removeItem("auth_token")
+        }
+      }
+
+      // Fall back to cookie-based auth check
       console.log("Trying direct backend URL:", `${BACKEND_URL}/api/auth/profile/`)
       const response = await fetch(`${BACKEND_URL}/api/auth/profile/`, {
         credentials: "include",
@@ -130,6 +157,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false)
       authCheckInProgress.current = false
+    }
+  }
+
+  const setUserAndToken = (userData: User, token: string) => {
+    console.log("Setting user and token:", userData)
+    localStorage.setItem("auth_token", token)
+    setUser(userData)
+  }
+
+  const loginWithToken = async (token: string) => {
+    console.log("Login with token called")
+
+    try {
+      setIsLoading(true)
+
+      const response = await fetch(`${BACKEND_URL}/api/auth/profile/`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: "include",
+      })
+
+      if (response.ok) {
+        const userData = await response.json()
+        console.log("Token login successful:", userData)
+
+        localStorage.setItem("auth_token", token)
+        setUser(userData)
+
+        return { success: true }
+      } else {
+        console.log("Token login failed with status:", response.status)
+        return {
+          success: false,
+          error: "Invalid or expired token",
+        }
+      }
+    } catch (error) {
+      console.error("Token login error:", error)
+      return {
+        success: false,
+        error: "An unexpected error occurred during token login",
+      }
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -170,6 +242,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const data = safeJsonParse(text)
         if (data) {
           setUser(data.user)
+
+          if (data.token) {
+            localStorage.setItem("auth_token", data.token)
+          }
+
           return { success: true }
         } else {
           return { success: false, error: "Failed to parse user data." }
@@ -198,6 +275,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       console.log("Logging out user...")
       console.log("Cookies before logout:", document.cookie)
+
+      localStorage.removeItem("auth_token")
 
       // Direct backend call only - no fallback
       console.log("Logging out via direct backend URL")
@@ -275,6 +354,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isBackendAvailable,
         checkBackendStatus,
         checkSession,
+        setUserAndToken,
+        loginWithToken,
       }}
     >
       {children}
@@ -289,4 +370,3 @@ export function useAuth() {
   }
   return context
 }
-

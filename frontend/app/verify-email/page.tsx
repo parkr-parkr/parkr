@@ -2,95 +2,107 @@
 
 import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { CheckCircle, XCircle, Loader2 } from "lucide-react"
-import { Button } from "@/components/shadcn/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/shadcn/card"
+import { Loader2 } from "lucide-react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/shadcn/card"
+import { useAuth } from "@/components/providers/auth-provider"
 
 export default function VerifyEmailPage() {
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading")
-  const [message, setMessage] = useState("")
   const router = useRouter()
   const searchParams = useSearchParams()
   const token = searchParams.get("token")
+  const { setUserAndToken, loginWithToken } = useAuth()
 
   useEffect(() => {
     if (!token) {
-      setStatus("error")
-      setMessage("No verification token provided. Please check your email link.")
+
+      router.push("/login?error=no-token&message=No verification token provided. Please check your email link.")
       return
     }
 
-    const verifyEmail = async () => {
+    const verifyEmailAndLogin = async () => {
       try {
-        console.log("Verifying email with token:", token)
-        // Note the trailing slash - important for Django REST Framework
-        const response = await fetch(`http://localhost:8000/api/auth/verify-email/${token}/`, {
+        console.log("Verifying email and logging in with token:", token)
+
+
+        const response = await fetch(`http://localhost:8000/api/auth/verify-and-login/${token}/`, {
           method: "GET",
         })
 
-        console.log("Verification response status:", response.status)
+        console.log("Verification and login response status:", response.status)
 
         if (response.ok) {
-          const data = await response.json().catch(() => ({}))
-          console.log("Verification success data:", data)
+          const data = await response.json()
+          console.log("Verification and login success data:", data)
+
           setStatus("success")
-          setMessage(data.message || "Your email has been successfully verified!")
+
+          if (data.user && data.token) {
+            // Use the setUserAndToken function to update auth state
+            setUserAndToken(data.user, data.token)
+
+            // Redirect to home page after a short delay
+            setTimeout(() => {
+              router.push("/")
+            }, 1500)
+          } else {
+            // If we only got a token but no user data, try to login with the token
+            if (data.token && !data.user) {
+              const loginResult = await loginWithToken(data.token)
+
+              if (loginResult.success) {
+                // Redirect to home page after a short delay
+                setTimeout(() => {
+                  router.push("/")
+                }, 1500)
+              } else {
+                throw new Error("Failed to login with token: " + loginResult.error)
+              }
+            } else {
+              throw new Error("Missing user data or token in response")
+            }
+          }
         } else {
           const data = await response.json().catch(() => ({}))
           console.log("Verification error data:", data)
           setStatus("error")
-          setMessage(data.error || "Failed to verify email. The link may be invalid or expired.")
+
+          // Redirect to login page with error message
+          const errorMessage = data.error || "Failed to verify email. The link may be invalid or expired."
+          router.push(
+            `/login?error=verification-failed&message=${encodeURIComponent(errorMessage)}&email=${encodeURIComponent(data.email || "")}`,
+          )
         }
       } catch (error) {
         console.error("Verification error:", error)
         setStatus("error")
-        setMessage("An error occurred while verifying your email. Please try again later.")
+
+        // Redirect to login page with generic error message
+        router.push(
+          "/login?error=verification-error&message=An error occurred while verifying your email. Please try again later.",
+        )
       }
     }
 
-    verifyEmail()
-  }, [token])
-
-  const goToLogin = () => {
-    router.push("/login")
-  }
+    verifyEmailAndLogin()
+  }, [token, router, setUserAndToken, loginWithToken])
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Email Verification</CardTitle>
-          <CardDescription>{status === "loading" ? "Verifying your email address..." : ""}</CardDescription>
+          <CardDescription>Verifying your email address...</CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col items-center justify-center space-y-4 text-center">
-          {status === "loading" && (
-            <div className="flex flex-col items-center space-y-4">
-              <Loader2 className="h-16 w-16 animate-spin text-primary" />
-              <p>Please wait while we verify your email...</p>
-            </div>
-          )}
-
+        <CardContent className="flex flex-col items-center justify-center space-y-4 text-center py-8">
+          <Loader2 className="h-16 w-16 animate-spin text-primary" />
+          <p>Please wait while we verify your email...</p>
           {status === "success" && (
-            <div className="flex flex-col items-center space-y-4">
-              <CheckCircle className="h-16 w-16 text-green-500" />
-              <p className="text-lg font-medium text-green-500">{message}</p>
-              <p>You can now log in to your account.</p>
-            </div>
-          )}
-
-          {status === "error" && (
-            <div className="flex flex-col items-center space-y-4">
-              <XCircle className="h-16 w-16 text-red-500" />
-              <p className="text-lg font-medium text-red-500">{message}</p>
-              <p>Please request a new verification link.</p>
-            </div>
+            <p className="text-green-500 font-medium mt-4">
+              Email verified successfully! Redirecting you to the home page...
+            </p>
           )}
         </CardContent>
-        <CardFooter className="flex justify-center">
-          {status !== "loading" && (
-            <Button onClick={goToLogin}>{status === "success" ? "Go to Login" : "Back to Login"}</Button>
-          )}
-        </CardFooter>
       </Card>
     </div>
   )
