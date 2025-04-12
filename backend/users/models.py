@@ -1,6 +1,7 @@
 from django.db import models
-from django.contrib.auth.models import AbstractUser, BaseUserManager, Group, Permission
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, Group, PermissionsMixin
 from django.utils.translation import gettext_lazy as _
+from django.utils import timezone
 import uuid
 
 
@@ -38,46 +39,34 @@ class UserManager(BaseUserManager):
         return self._create_user(email, password, **extra_fields)
 
 
-class User(AbstractUser):
-    """User model with email as the unique identifier."""
-
-    # Add related_name attributes to avoid clashes with auth.User
-    groups = models.ManyToManyField(
-        Group,
-        verbose_name=_('groups'),
-        blank=True,
-        help_text=_(
-            'The groups this user belongs to. A user will get all permissions '
-            'granted to each of their groups.'
-        ),
-        related_name='custom_user_set',  # Add this line
-        related_query_name='user',
-    )
-    user_permissions = models.ManyToManyField(
-        Permission,
-        verbose_name=_('user permissions'),
-        blank=True,
-        help_text=_('Specific permissions for this user.'),
-        related_name='custom_user_set',  # Add this line
-        related_query_name='user',
-    )
-
-    # Keep username but make email the unique identifier
+class User(AbstractBaseUser, PermissionsMixin):  # Note: not AbstractUser
     email = models.EmailField(_('email address'), unique=True)
-    username = models.CharField(_('username'), max_length=150, unique=True)
     first_name = models.CharField(_('first name'), max_length=150)
     last_name = models.CharField(_('last name'), max_length=150)
     name = models.CharField(_('full name'), max_length=300, blank=True)
-
-    # Additional useful fields
-    is_verified = models.BooleanField(_('email verified'), default=False)
-    can_list_driveway = models.BooleanField(_('can list driveway'), default=False)
-
-    EMAIL_FIELD = 'email'
-    USERNAME_FIELD = 'email'  # Use email for login
-    REQUIRED_FIELDS = ['username']  # Required when creating superuser
-
+    
+    is_staff = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+    date_joined = models.DateTimeField(default=timezone.now)
+    is_verified = models.BooleanField(default=False)
+    can_list_driveway = models.BooleanField(default=False)
+    
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = []
+    
     objects = UserManager()
+    def save(self, *args, **kwargs):
+
+        if self.first_name:
+            self.first_name = self.first_name.strip().title()
+        
+        if self.last_name:
+            self.last_name = self.last_name.strip().title()
+
+        self.name = f"{self.first_name} {self.last_name}".strip()
+        
+        super().save(*args, **kwargs)
+
 
     def __str__(self):
         return self.email
@@ -112,4 +101,3 @@ class VerificationToken(models.Model):
 
     def __str__(self):
         return str(self.token)
-
