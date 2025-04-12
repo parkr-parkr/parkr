@@ -143,6 +143,7 @@ export default function SearchPage() {
 
     // Make API call to fetch parking spots
     if (locationData) {
+      // Can we use await here AI!
       ApiClient.get<ParkingSpot[]>(
         `/api/places/get-listings-by-location/?latitude=${locationData.latitude}&longitude=${locationData.longitude}&latitude_range=0.25&longitude_range=0.25`,
       )
