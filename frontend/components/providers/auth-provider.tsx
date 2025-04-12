@@ -51,32 +51,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const authCheckInProgress = useRef(false)
   const lastAuthCheck = useRef<number>(0)
   const AUTH_CHECK_THROTTLE = 5000 // 5 seconds
-  const [isBackendAvailable, setIsBackendAvailable] = useState<boolean | null>(null)
-
-  // Check backend availability
-  const checkBackendStatus = async () => {
-    try {
-      console.log("Checking backend availability...")
-      const response = await fetch(`${BACKEND_URL}/api/auth/login/`, {
-        method: "OPTIONS",
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Request-Method": "POST",
-          "Access-Control-Request-Headers": "content-type",
-          Origin: window.location.origin,
-        },
-      })
-
-      const isAvailable = response.ok || response.status === 200 || response.status === 204
-      console.log("Backend availability check result:", isAvailable, "Status:", response.status)
-      setIsBackendAvailable(isAvailable)
-      return isAvailable
-    } catch (error) {
-      console.error("Backend availability check failed:", error)
-      setIsBackendAvailable(false)
-      return false
-    }
-  }
 
   // Simplified check session function
   const checkSession = async () => {
@@ -209,15 +183,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     console.log("Login function called with email:", email)
 
-    // Check if backend is available
-    const isAvailable = await checkBackendStatus()
-    if (!isAvailable) {
-      return {
-        success: false,
-        error: "Backend server is not available. Please make sure the Django server is running.",
-      }
-    }
-
     try {
       setIsLoading(true)
 
@@ -329,20 +294,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // Initialize auth on component mount
-  useEffect(() => {
-    const initAuth = async () => {
-      const isAvailable = await checkBackendStatus()
-      if (isAvailable) {
-        checkAuth()
-      } else {
-        setIsLoading(false)
-      }
-    }
-
-    initAuth()
-  }, [])
-
+  
   return (
     <AuthContext.Provider
       value={{
@@ -351,8 +303,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         logout,
         checkAuth,
-        isBackendAvailable,
-        checkBackendStatus,
         checkSession,
         setUserAndToken,
         loginWithToken,
