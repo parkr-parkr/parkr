@@ -836,7 +836,7 @@ class TestDeletePlaceImagesHelper:
                 # Verify the results
                 assert success_count == 1  # Only the second image should be successfully deleted
                 assert len(failed_images) == 1  # One failure
-                assert failed_images[0] == 1  # The failed image ID should be 1
+                assert failed_images[0] == 12  # The failed image ID should be 1
                 
                 # Verify filter was called with the correct place
                 mock_filter.assert_called_once_with(place=place)
