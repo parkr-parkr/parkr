@@ -8,6 +8,16 @@ class PlaceImageSerializer(serializers.ModelSerializer):
         model = PlaceImage
         fields = ['id', 'image_key', 'is_primary', 'url', 'created_at']
         
+    def get_url(self, obj):
+        if obj.image_key:
+            from .s3_service import s3_service
+            return s3_service.get_url(obj.image_key)
+        elif obj.image:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.image.url)
+            return obj.image.url
+        return None
 
 class AvailabilitySerializer(serializers.ModelSerializer):
     class Meta:
