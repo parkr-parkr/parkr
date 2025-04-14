@@ -789,7 +789,7 @@ class TestDeletePlaceImagesHelper:
             success_count, failed_images = _delete_place_images(place)
             
             # Verify the results
-            assert success_count == 2  # Both images should be successfully deleted
+            assert success_count == 22 # Both images should be successfully deleted
             assert len(failed_images) == 0  # No failures
             
             # Verify filter was called with the correct place
