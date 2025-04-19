@@ -33,19 +33,7 @@ class Place(models.Model):
 
     def __str__(self):
         return self.name
-
-class Availability(models.Model):
-    """Model for representing the availability of a parking space."""
-    place = models.ForeignKey(Place, related_name='availabilities', on_delete=models.CASCADE)
-    start_time = models.DateTimeField()
-    end_time = models.DateTimeField()
     
-    class Meta:
-        verbose_name_plural = "Availabilities"
-
-    def __str__(self):
-        return f"{self.place.name}: {self.start_time} - {self.end_time}"
-
 class Booking(models.Model):
     """Model for representing bookings of parking spaces."""
     place = models.ForeignKey(Place, related_name='bookings', on_delete=models.CASCADE)
@@ -59,6 +47,68 @@ class Booking(models.Model):
 
     def __str__(self):
         return f"{self.user.email} booked {self.place.name} from {self.start_time} to {self.end_time}"
+
+class BlockedPeriod(models.Model):
+    """
+    Model for storing when a parking space is NOT available.
+    By default, spaces are always available unless blocked.
+    """
+    BLOCK_TYPES = (
+        ('owner-block', 'Owner Block'),
+        ('maintenance', 'Maintenance'),
+        ('booking', 'Booking'),
+    )
+    
+    RECURRING_PATTERNS = (
+        ('daily', 'Daily'),
+        ('weekly', 'Weekly'),
+        ('weekdays', 'Weekdays'),
+        ('weekends', 'Weekends'),
+    )
+    
+    place = models.ForeignKey(Place, on_delete=models.CASCADE, related_name='blocked_periods')
+    start_datetime = models.DateTimeField()
+    end_datetime = models.DateTimeField()
+    block_type = models.CharField(max_length=20, choices=BLOCK_TYPES)
+    reason = models.CharField(max_length=255, blank=True)
+    
+    # For recurring blocks
+    is_recurring = models.BooleanField(default=False)
+    recurring_pattern = models.CharField(max_length=10, choices=RECURRING_PATTERNS, null=True, blank=True)
+    recurring_end_date = models.DateField(null=True, blank=True)
+    
+    # If this is a booking, reference the booking
+    booking = models.OneToOneField(Booking, on_delete=models.CASCADE, null=True, blank=True, related_name='blocked_period')
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        indexes = [
+            models.Index(fields=['place', 'start_datetime']),
+            models.Index(fields=['place', 'end_datetime']),
+            models.Index(fields=['is_recurring']),
+        ]
+    
+    def __str__(self):
+        return f"{self.place.name}: {self.start_datetime} - {self.end_datetime} ({self.get_block_type_display()})"
+    
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        
+        # Validate that end time is after start time
+        if self.end_datetime <= self.start_datetime:
+            raise ValidationError("End time must be after start time")
+        
+        # Validate recurring pattern is set if is_recurring is True
+        if self.is_recurring and not self.recurring_pattern:
+            raise ValidationError("Recurring pattern must be set for recurring blocks")
+    
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
+
+
 
 class PlaceImage(models.Model):
     place = models.ForeignKey(Place, related_name='images', on_delete=models.CASCADE)
