@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { CarFront, Edit, Trash2, Loader2, AlertCircle, PlusCircle, ImageIcon } from "lucide-react"
+// First, import the Calendar icon
+import { CarFront, Edit, Trash2, Loader2, AlertCircle, PlusCircle, ImageIcon, Calendar } from "lucide-react"
 
 import { Button } from "@/components/shadcn/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/shadcn/card"
@@ -273,11 +274,18 @@ export default function MyListingsPage() {
                     )}
                   </p>
                 </CardContent>
+                {/* Then, modify the CardFooter section in the listings.map function to include the Availability button */}
                 <CardFooter className="flex justify-between">
-                  <Button variant="outline" onClick={() => handleEditListing(listing)}>
-                    <Edit className="mr-2 h-4 w-4" />
-                    Edit
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => handleEditListing(listing)}>
+                      <Edit className="mr-2 h-4 w-4" />
+                      Edit
+                    </Button>
+                    <Button variant="outline" onClick={() => router.push(`/listings/${listing.id}/availability`)}>
+                      <Calendar className="mr-2 h-4 w-4" />
+                      Availability
+                    </Button>
+                  </div>
                   <Button variant="destructive" onClick={() => handleDeleteListing(listing.id)}>
                     <Trash2 className="mr-2 h-4 w-4" />
                     Delete

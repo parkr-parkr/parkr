@@ -9,5 +9,8 @@ urlpatterns = [
     path('images/', views.add_image, name='add_image'),
     path('images/<int:image_id>/', views.delete_image, name='delete_image'),
     path('images/<int:image_id>/set-primary/', views.set_primary_image, name='set_primary_image'),
+    path('blocked-periods/', views.blocked_periods, name='blocked-periods'),
+    path('blocked-periods/<int:blocked_period_id>/', views.blocked_period_detail, name='blocked-period-detail'),
+    path('check-availability/', views.check_availability, name='check-availability'),
 ]
 
